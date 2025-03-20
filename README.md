@@ -1,10 +1,10 @@
-# luckyCapy
+# lucky1SUI
 基于sui的一个彩票项目
 
 ## 项目结构描述
 
 ```
-luckyCapy/
+lucky1SUI/
 ├── move/                  # Move智能合约目录
 │   ├── lucky_capy         # 彩票项目合约
 │       ├──source/         # 合约源码
