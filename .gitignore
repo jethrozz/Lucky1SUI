@@ -6,3 +6,4 @@
 ./temp
 ./move/build
 ./move/Move.lock
+./move/.idea
