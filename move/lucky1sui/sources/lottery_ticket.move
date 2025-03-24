@@ -3,7 +3,13 @@ module lucky1sui::lottery_ticket{
     use std::string::{Self, String};
     use sui::vec_map::{Self, VecMap};
     use lucky1sui::lottery::LotteryPool;
-        //彩票的一次性见证者
+
+    //
+    public struct ManagerCap has key,store {
+        id: UID
+    }
+    
+    //彩票的一次性见证者
     public struct LOTTERY_TICKET has drop {}
         // 彩票nft
     public struct Ticket has key, store {
@@ -17,6 +23,15 @@ module lucky1sui::lottery_ticket{
         ext_bag: Bag, // 彩票号
     }
 
+    //供应不同活动类型的彩票基本信息
+ public struct TicketPool has key {
+        id: UID,
+        tickets: TableVec<Ticket>,
+        num: u64,
+        is_live: bool,
+        // price: u64,
+        // start_time: u64,
+    }
     fun init(otw: LOTTERY_TICKET, ctx : &mut TxContext){
         //固定写法
         let keys = vector[
@@ -55,23 +70,28 @@ module lucky1sui::lottery_ticket{
             display.update_version();
             transfer::public_transfer(publisher, ctx.sender());
             transfer::public_transfer(display, ctx.sender());
+            //
+            let manager_cap = ManagerCap{
+                id: object::new(ctx),
+            }
+            transfer::public_transfer(manager_cap, ctx.sender);
     }
 
-    public(package) fun genTicket(name: String, desc: String, link: String, image_url:String,project_url: String, pool_no: u64, ctx : &mut TxContext): Ticket{
-        let mut ticket = Ticket {
-            id: object::new(ctx),
-            name,
-            description: desc,
-            link,
-            image_url,
-            project_url,
-            creator: b"LuckyOneSui".to_string(),
-            ext_bag: bag::new(ctx),
+    public(package) fun getTicket(ticket_pool: &mut TicketPool, lottery_pool_no: u64, random: &Random, ctx : &mut TxContext): Ticket{
+        assert!(ticket_pool.is_live, E_NOT_LIVE);
+        let len = table_vec::length(&ticket_pool.tickets);
+        assert!(len > 0, E_EMPTY_POOL);
+
+        let mut ticket = if (len == 1) {
+            table_vec::pop_back(&mut ticket_pool.tickets)
+        } else {
+            let mut generator = random::new_generator(random, ctx);
+            let i = random::generate_u64_in_range(&mut generator, 0, len-1);
+            table_vec::swap_remove(&mut ticket_pool.tickets, i)
         };
 
         let ext_bag = &mut ticket.ext_bag; 
         ext_bag.add(b"pool_no", pool_no);
-
         ticket
     }
 
@@ -93,6 +113,70 @@ module lucky1sui::lottery_ticket{
         };
         ext_bag.add(b"ticket_number_set", ticket_number_set);
         
+    }
+
+    //创建一个新的池子
+    entry fun newTicketPool(
+        _manager_cap: &ManagerCap,
+        ctx: &mut TxContext,
+    ) {
+        let pool = createTicketPool(ctx);
+        transfer::share_object(pool);
+    }
+    public(package) fun createTicketPool(ctx: &mut TxContext): TicketPool{
+        let pool = TicketPool {
+            id: object::new(ctx),
+            tickets: table_vec::empty(ctx),
+            num: 0,
+            is_live: false,
+        };
+        pool
+    }
+
+    //关闭池子
+    entry fun closeTicketPool(
+        _manager_cap: &ManagerCap,
+        pool: TicketPool,
+    ) {
+        deleteTicketPool(pool);
+    }
+
+    public(package) fun deleteTicketPool(pool: TicketPool){
+        let TicketPool {
+            id,
+            tickets,
+            num:_,
+            is_live:_,
+        } = pool;
+
+        table_vec::destroy_empty(tickets);
+        object::delete(id);
+    }
+
+    entry fun deposit_ticket(
+        _manager_cap: &ManagerCap,
+        pool: &mut Pool,
+        name: String,
+        desc: String,
+        number: u64,
+        link: String,
+        image_url: String,
+        project_url: String,
+        ctx: &mut TxContext,
+    ) {
+        let ticket = Ticket {
+            id: object::new(ctx),
+            name,
+            description: desc,
+            link,
+            image_url,
+            project_url,
+            creator: b"LuckyOneSui".to_string(),
+            ext_bag: bag::new(ctx),
+        };
+        //存入池子
+        table_vec::push_back(&mut pool.tickets, ticket);
+        pool.num = pool.num + 1;
     }
 
 }

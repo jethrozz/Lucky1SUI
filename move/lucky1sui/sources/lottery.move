@@ -12,7 +12,7 @@ module lucky1sui::lottery {
     use lending_core::logic;
     use oracle::oracle::{PriceOracle};
     use std::type_name;
-    use lucky1sui::{lottery_vault, lottery_event, lottery_ticket};
+    use lucky1sui::{lottery_vault, lottery_event, lottery_ticket::{Self, TicketPool}};
 
     // LotteryAdminCap现在是public的，因为内部结构声明不被支持
     public struct LotteryAdminCap has key, store {
@@ -34,6 +34,7 @@ module lucky1sui::lottery {
     public struct Lottery has key, store {
         id: UID,
         lottery_pool_id: ID, //最新一期彩票池id
+        ticket_pool_id: ID,
         asset_index: VecMap<String, u8>,
         account_cap: AccountCap,
         hold_on_time: u64
@@ -42,9 +43,13 @@ module lucky1sui::lottery {
     /**
     常量定义
     */
-    const CAN_NOT_START_LOTTERY:u64 = 1;
-    const NOT_SUPPORT_COIN_TYPE:u64 = 2;
-    const NOT_SUPPORT_COIN_AMOUNT:u64 = 3;
+    const CAN_NOT_START_LOTTERY:u8 = 11;
+    const NOT_SUPPORT_COIN_TYPE:u8 = 12;
+    const NOT_SUPPORT_COIN_AMOUNT:u8 = 13;
+    const E_NOT_SELECT_TICKET_NO:u8 = 14;
+    const E_EMPTY_POOL: u8 = 32;
+    const E_NOT_LIVE: u8 = 33;
+
     fun init(ctx: &mut TxContext) {
         let addr: address = @0x1;
         let admin_cap = LotteryAdminCap {
@@ -81,11 +86,15 @@ module lucky1sui::lottery {
             user_deposit: vec_map::empty(), // 用户已存入的资金
             joined_ticket_numbers: vec_map::empty(), 
         };
-        
+        //创建NFT池子
+        let ticket_pool = lottery_ticket::createTicketPool(ctx);
+        let ticket_pool_id = object::id(&ticket_pool);
         // 获取 lottery_pool 的 ID
-        let pool_id = object::id(&lottery_pool);
-        lottery.lottery_pool_id = pool_id;
-        
+        let lottery_pool_id = object::id(&lottery_pool);
+
+        lottery.lottery_pool_id = lottery_pool_id;
+        lottery.ticket_pool_id = ticket_pool_id;
+        transfer::public_share_object(ticket_pool);
         transfer::public_share_object(lottery_pool);
     }
 
@@ -93,12 +102,14 @@ module lucky1sui::lottery {
     public entry fun joinLotteryPool<CoinType>(
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool, 
+        ticketPool: &mut TicketPool,
         depositCoin: Coin<CoinType>, 
         storage: &mut Storage, 
         incentiveV3: &mut Incentive, 
         incentiveV2: &mut IncentiveV2, 
         pool: &mut Pool<CoinType>, 
         clock: &Clock, 
+        random: &Random
         ctx: &mut TxContext){
         //目前只支持sui
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
@@ -110,7 +121,7 @@ module lucky1sui::lottery {
         assert!(coin_mod == 0, NOT_SUPPORT_COIN_AMOUNT);
         assert!(coin_count > 0, NOT_SUPPORT_COIN_AMOUNT);
         //生成彩票nft 待实现
-        let ticket=lottery_ticket::genTicket(name, desc, link, image_url, project_url, lotteryPool.no, ctx);
+        let ticket=lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
         //生成彩票号码
         lottery_ticket::addTicketNumber(&mut ticket, lotteryPool.no, coin_count, clock, &mut lotteryPool.joined_ticket_numbers);
         // 获取 account_cap 的引用
@@ -130,5 +141,33 @@ module lucky1sui::lottery {
         let lottery_id = object::id(lotteryPool);
         lottery_event::emit_user_buy_ticket(lottery_id, lotteryPool.no, ctx.sender(), depositCoin.value());
         lottery_event::emit_generate_ticket(lottery_id, lotteryPool.no, object::id(&ticket), ctx.sender());
+    }
+
+
+    public entry fun exitLotteryPool<CoinType>(
+        lottery: &Lottery,
+        lotteryPool: &mut LotteryPool, 
+        ticket_nums: vector<String>
+        storage: &mut Storage,
+        pool: &mut Pool<CoinType>,
+        incentive_v2: &mut IncentiveV2,
+        incentive_v3: &mut Incentive,
+        clock: &Clock,
+        oracle: &PriceOracle,
+        ctx: &mut TxContext){
+        let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
+        assert!(lottery.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
+        
+        assert!(ticket_nums.length() == 0, E_NOT_SELECT_TICKET_NO);
+        //退的金额
+        //let amount = ticket_nums.length() * 1000000000;
+        //先将彩票号移除待抽奖池
+
+        while(ticket_nums.length() > 0){
+            let ticket_no = ticket_nums.pop_back();
+            
+            lotteryPool.joined_ticket_numbers;
+        }
+
     }
 }
