@@ -1,10 +1,14 @@
 module lucky1sui::lottery_ticket{
-    use sui::{package, display, bag::{Self, Bag}, object::{Self, UID, ID}, clock::Clock};
+    use sui::{package, transfer, random::{Self, Random},display, bag::{Self, Bag}, object::{Self, UID, ID}, clock::Clock};
     use std::string::{Self, String};
     use sui::vec_map::{Self, VecMap};
+    use sui::table_vec::{Self, TableVec};
     use lucky1sui::lottery::LotteryPool;
 
-    //
+    //**常量定义*/
+    const E_NOT_LIVE: u64 = 41;
+    const E_EMPTY_POOL: u64 = 42;
+    //**管理员权限*/
     public struct ManagerCap has key,store {
         id: UID
     }
@@ -24,13 +28,11 @@ module lucky1sui::lottery_ticket{
     }
 
     //供应不同活动类型的彩票基本信息
- public struct TicketPool has key {
+ public struct TicketPool has key, store {
         id: UID,
         tickets: TableVec<Ticket>,
         num: u64,
         is_live: bool,
-        // price: u64,
-        // start_time: u64,
     }
     fun init(otw: LOTTERY_TICKET, ctx : &mut TxContext){
         //固定写法
@@ -73,8 +75,8 @@ module lucky1sui::lottery_ticket{
             //
             let manager_cap = ManagerCap{
                 id: object::new(ctx),
-            }
-            transfer::public_transfer(manager_cap, ctx.sender);
+            };
+            transfer::public_transfer(manager_cap, ctx.sender());
     }
 
     public(package) fun getTicket(ticket_pool: &mut TicketPool, lottery_pool_no: u64, random: &Random, ctx : &mut TxContext): Ticket{
@@ -91,7 +93,7 @@ module lucky1sui::lottery_ticket{
         };
 
         let ext_bag = &mut ticket.ext_bag; 
-        ext_bag.add(b"pool_no", pool_no);
+        ext_bag.add(b"pool_no", lottery_pool_no);
         ticket
     }
 
@@ -99,7 +101,7 @@ module lucky1sui::lottery_ticket{
         let ext_bag = &mut ticket.ext_bag; 
         let mut ticket_number_set = vector::empty<String>();
         let mut i=1;
-        let ticket_id = object::id(ticket);
+        let ticket_id = object::id(&ticket);
         while(i <= count){
             let mut tn: String = b"".to_string();
             let timestamp = clock.timestamp_ms();   
@@ -155,7 +157,7 @@ module lucky1sui::lottery_ticket{
 
     entry fun deposit_ticket(
         _manager_cap: &ManagerCap,
-        pool: &mut Pool,
+        pool: &mut TicketPool,
         name: String,
         desc: String,
         number: u64,

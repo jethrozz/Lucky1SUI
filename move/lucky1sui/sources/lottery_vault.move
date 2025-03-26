@@ -6,6 +6,7 @@ module lucky1sui::lottery_vault{
     use lending_core::storage::{Storage};
     use oracle::oracle::{PriceOracle};
     use sui::{clock::Clock};
+    use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap};
 
     public(package) fun deposit<CoinType> (

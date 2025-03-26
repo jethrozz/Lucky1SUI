@@ -1,6 +1,6 @@
 module lucky1sui::lottery {
     use sui::object::{Self, UID, ID};
-    use sui::{clock::Clock, tx_context::{Self, TxContext}, transfer, vec_map::{Self, VecMap}, coin::{Self, Coin}};
+    use sui::{clock::Clock, random::{Self, Random}, tx_context::{Self, TxContext}, transfer, vec_map::{Self, VecMap}, coin::{Self, Coin}};
     use std::string::{Self, String};
     use lending_core::account::{AccountCap};
     use lending_core::lending;
@@ -43,31 +43,40 @@ module lucky1sui::lottery {
     /**
     常量定义
     */
-    const CAN_NOT_START_LOTTERY:u8 = 11;
-    const NOT_SUPPORT_COIN_TYPE:u8 = 12;
-    const NOT_SUPPORT_COIN_AMOUNT:u8 = 13;
-    const E_NOT_SELECT_TICKET_NO:u8 = 14;
-    const E_EMPTY_POOL: u8 = 32;
-    const E_NOT_LIVE: u8 = 33;
+    const CAN_NOT_START_LOTTERY:u64 = 11;
+    const NOT_SUPPORT_COIN_TYPE:u64 = 12;
+    const NOT_SUPPORT_COIN_AMOUNT:u64 = 13;
+    const E_NOT_SELECT_TICKET_NO:u64 = 14;
+    const E_EMPTY_POOL: u64 = 32;
+    const E_NOT_LIVE: u64 = 33;
 
     fun init(ctx: &mut TxContext) {
-        let addr: address = @0x1;
+        let addr_0x1: address = @0x1;
         let admin_cap = LotteryAdminCap {
             id: object::new(ctx)
         };
 
+
+
         let mut asset_index = vec_map::empty();
         asset_index.insert(b"0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string(), 0);
 
+        //创建NFT池子
+        let ticket_pool = lottery_ticket::createTicketPool(ctx);
+        let ticket_pool_id = object::id(&ticket_pool);
+
+
         let lottery = Lottery {
             id: object::new(ctx),
-            lottery_pool_id: object::id_from_address(addr),
+            lottery_pool_id: object::id_from_address(addr_0x1),
+            ticket_pool_id: ticket_pool_id,
             account_cap: lending::create_account(ctx),
             asset_index,
-            hold_on_time: 7*24*60*60*1000 //开奖时间。后续会用作校验
+            hold_on_time: 7*24*60*60*1000, //开奖时间。后续会用作校验
         };
         transfer::public_share_object(lottery);
         transfer::public_transfer(admin_cap, ctx.sender());
+        transfer::public_share_object(ticket_pool);
     }
 
 
@@ -86,15 +95,12 @@ module lucky1sui::lottery {
             user_deposit: vec_map::empty(), // 用户已存入的资金
             joined_ticket_numbers: vec_map::empty(), 
         };
-        //创建NFT池子
-        let ticket_pool = lottery_ticket::createTicketPool(ctx);
-        let ticket_pool_id = object::id(&ticket_pool);
+
         // 获取 lottery_pool 的 ID
         let lottery_pool_id = object::id(&lottery_pool);
 
         lottery.lottery_pool_id = lottery_pool_id;
-        lottery.ticket_pool_id = ticket_pool_id;
-        transfer::public_share_object(ticket_pool);
+        
         transfer::public_share_object(lottery_pool);
     }
 
@@ -109,7 +115,7 @@ module lucky1sui::lottery {
         incentiveV2: &mut IncentiveV2, 
         pool: &mut Pool<CoinType>, 
         clock: &Clock, 
-        random: &Random
+        random: &Random,
         ctx: &mut TxContext){
         //目前只支持sui
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
@@ -121,7 +127,7 @@ module lucky1sui::lottery {
         assert!(coin_mod == 0, NOT_SUPPORT_COIN_AMOUNT);
         assert!(coin_count > 0, NOT_SUPPORT_COIN_AMOUNT);
         //生成彩票nft 待实现
-        let ticket=lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
+        let mut ticket=lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
         //生成彩票号码
         lottery_ticket::addTicketNumber(&mut ticket, lotteryPool.no, coin_count, clock, &mut lotteryPool.joined_ticket_numbers);
         // 获取 account_cap 的引用
@@ -130,24 +136,34 @@ module lucky1sui::lottery {
         // 获取 account_cap 的引用
         let account_cap_ref = &lottery.account_cap;
         // 调用 deposit 函数, 存入navi
-        lottery_vault::deposit<CoinType>(asset, account_cap_ref, depositCoin, storage, pool, incentiveV2, incentiveV3, clock);
+        let mut deposit_coin = depositCoin;
+        let deposit_coin_value = deposit_coin.value();
+        lottery_vault::deposit<CoinType>(asset, account_cap_ref, deposit_coin, storage, pool, incentiveV2, incentiveV3, clock);
         
         // 更新用户已存入的资金
-        lotteryPool.user_deposit.insert(ctx.sender(), depositCoin.value());
-        // 将彩票nft转移给用户
-        transfer::public_transfer(ticket, ctx.sender());
+        // 如果用户已经存在，则更新金额，否则插入   
+        if(lotteryPool.user_deposit.contains(ctx.sender())){        
+            let old_value = lotteryPool.user_deposit.get(&ctx.sender());
+            let total = old_value + deposit_coin_value;
+            lotteryPool.user_deposit.insert(ctx.sender(), total);
+        }else{
+            lotteryPool.user_deposit.insert(ctx.sender(), deposit_coin_value);
+        }
 
         //发出事件
-        let lottery_id = object::id(lotteryPool);
-        lottery_event::emit_user_buy_ticket(lottery_id, lotteryPool.no, ctx.sender(), depositCoin.value());
-        lottery_event::emit_generate_ticket(lottery_id, lotteryPool.no, object::id(&ticket), ctx.sender());
+        let lotteryId = object::id(lotteryPool);
+        let ticketId = object::id(&ticket);
+        // 将彩票nft转移给用户
+        transfer::public_transfer(ticket, ctx.sender());
+        lottery_event::emit_user_buy_ticket(lotteryId, lotteryPool.no, ctx.sender(), deposit_coin_value);
+        lottery_event::emit_generate_ticket(lotteryId, lotteryPool.no, ticketId, ctx.sender());
     }
 
 
     public entry fun exitLotteryPool<CoinType>(
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool, 
-        ticket_nums: vector<String>
+        ticket_nums: &mut vector<String>,
         storage: &mut Storage,
         pool: &mut Pool<CoinType>,
         incentive_v2: &mut IncentiveV2,
@@ -165,8 +181,9 @@ module lucky1sui::lottery {
 
         while(ticket_nums.length() > 0){
             let ticket_no = ticket_nums.pop_back();
+            let ticket_id = lotteryPool.joined_ticket_numbers.get(&ticket_no);
+            //
             
-            lotteryPool.joined_ticket_numbers;
         }
 
     }
