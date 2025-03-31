@@ -97,11 +97,10 @@ module lucky1sui::lottery_ticket{
         ticket
     }
 
-    public(package) fun addTicketNumber(ticket: &mut Ticket, pool_no: u64, count:u64,clock: &Clock, joined_ticket_numbers: &mut VecMap<String, ID>){
+    public(package) fun addTicketNumber(ticket : &mut Ticket, ticket_id: ID, pool_no: u64, count:u64,clock: &Clock, joined_ticket_numbers: &mut VecMap<String, ID>){
         let ext_bag = &mut ticket.ext_bag; 
         let mut ticket_number_set = vector::empty<String>();
         let mut i=1;
-        let ticket_id = object::id(&ticket);
         while(i <= count){
             let mut tn: String = b"".to_string();
             let timestamp = clock.timestamp_ms();   
@@ -115,6 +114,12 @@ module lucky1sui::lottery_ticket{
         };
         ext_bag.add(b"ticket_number_set", ticket_number_set);
         
+    }
+
+    public(package) fun removeTicketNumber(ticket: &mut Ticket, ticket_number: String){
+        let ext_bag = &mut ticket.ext_bag; 
+        let ticket_number_set = ext_bag.borrow_mut(b"ticket_number_set");
+        ticket_number_set.remove(&ticket_number);
     }
 
     //创建一个新的池子
@@ -180,5 +185,4 @@ module lucky1sui::lottery_ticket{
         table_vec::push_back(&mut pool.tickets, ticket);
         pool.num = pool.num + 1;
     }
-
 }

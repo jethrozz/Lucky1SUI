@@ -5,14 +5,14 @@ module lucky1sui::lottery {
     use lending_core::account::{AccountCap};
     use lending_core::lending;
     use lending_core::incentive_v2::{Incentive as IncentiveV2};
-    use lending_core::incentive_v3::{Self, Incentive};
+    use lending_core::incentive_v3::{Self, Incentive, RewardFund};
     use lending_core::pool::{Pool};
     use lending_core::storage::{Storage};
     use lending_core::version;
     use lending_core::logic;
     use oracle::oracle::{PriceOracle};
     use std::type_name;
-    use lucky1sui::{lottery_vault, lottery_event, lottery_ticket::{Self, TicketPool}};
+    use lucky1sui::{lottery_vault, lottery_event, lottery_ticket::{Self, TicketPool, Ticket}};
 
     // LotteryAdminCap现在是public的，因为内部结构声明不被支持
     public struct LotteryAdminCap has key, store {
@@ -104,7 +104,7 @@ module lucky1sui::lottery {
         transfer::public_share_object(lottery_pool);
     }
 
-
+    //参与抽奖
     public entry fun joinLotteryPool<CoinType>(
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool, 
@@ -129,22 +129,23 @@ module lucky1sui::lottery {
         //生成彩票nft 待实现
         let mut ticket=lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
         //生成彩票号码
-        lottery_ticket::addTicketNumber(&mut ticket, lotteryPool.no, coin_count, clock, &mut lotteryPool.joined_ticket_numbers);
+        let ticket_id = object::id(&ticket);
+        lottery_ticket::addTicketNumber(&mut ticket, ticket_id, lotteryPool.no, coin_count, clock, &mut lotteryPool.joined_ticket_numbers);
         // 获取 account_cap 的引用
         //拿到资产索引
         let asset = *lottery.asset_index.get(target_coin_type);
         // 获取 account_cap 的引用
         let account_cap_ref = &lottery.account_cap;
         // 调用 deposit 函数, 存入navi
-        let mut deposit_coin = depositCoin;
+        let deposit_coin = depositCoin;
         let deposit_coin_value = deposit_coin.value();
         lottery_vault::deposit<CoinType>(asset, account_cap_ref, deposit_coin, storage, pool, incentiveV2, incentiveV3, clock);
         
         // 更新用户已存入的资金
         // 如果用户已经存在，则更新金额，否则插入   
-        if(lotteryPool.user_deposit.contains(ctx.sender())){        
+        if(lotteryPool.user_deposit.contains(&ctx.sender())){        
             let old_value = lotteryPool.user_deposit.get(&ctx.sender());
-            let total = old_value + deposit_coin_value;
+            let total = *old_value + deposit_coin_value;
             lotteryPool.user_deposit.insert(ctx.sender(), total);
         }else{
             lotteryPool.user_deposit.insert(ctx.sender(), deposit_coin_value);
@@ -159,11 +160,12 @@ module lucky1sui::lottery {
         lottery_event::emit_generate_ticket(lotteryId, lotteryPool.no, ticketId, ctx.sender());
     }
 
-
+    //退出抽奖
     public entry fun exitLotteryPool<CoinType>(
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool, 
         ticket_nums: &mut vector<String>,
+        ticket: &mut Ticket,
         storage: &mut Storage,
         pool: &mut Pool<CoinType>,
         incentive_v2: &mut IncentiveV2,
@@ -176,15 +178,42 @@ module lucky1sui::lottery {
         
         assert!(ticket_nums.length() == 0, E_NOT_SELECT_TICKET_NO);
         //退的金额
-        //let amount = ticket_nums.length() * 1000000000;
+        let amount = ticket_nums.length() * 1000000000;
         //先将彩票号移除待抽奖池
+        //从彩票中拿到彩票号
 
         while(ticket_nums.length() > 0){
             let ticket_no = ticket_nums.pop_back();
-            let ticket_id = lotteryPool.joined_ticket_numbers.get(&ticket_no);
-            //
+            //将彩票号移除待抽奖池
+            lotteryPool.joined_ticket_numbers.remove(&ticket_no);
+            //发出彩票失效事件
+            let lotteryId = object::id(lotteryPool);
+            let ticket_id = object::id(ticket);
+            lottery_ticket::removeTicketNumber(ticket, ticket_no);
+            lottery_event::emit_ticket_number_invalid(lotteryId, lotteryPool.no, ticket_id,ticket_no, ctx.sender());
+        };
+
+        //退款操作
+        // 获取 account_cap 的引用
+        let account_cap_ref = &lottery.account_cap;
+        let asset = *lottery.asset_index.get(target_coin_type);
+        lottery_vault::withdraw<CoinType>(asset, account_cap_ref, amount, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
+    }
+
+    //开奖
+    public entry fun drawLottery<RewardCoinType>(
+        lottery: &Lottery,
+        lotteryPool: &mut LotteryPool,
+        storage: &mut Storage,
+        incentive: &mut Incentive,
+        reward_fund: &mut RewardFund<RewardCoinType>,
+        clock: &Clock,
+        random: &Random,
+        oracle: &PriceOracle,
+        ctx: &mut TxContext){
+            //先抽奖
             
+
         }
 
-    }
 }

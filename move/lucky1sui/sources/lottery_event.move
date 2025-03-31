@@ -1,6 +1,7 @@
 module lucky1sui::lottery_event {
     use sui::object::{Self, ID};
     use sui::event;
+    use std::string::String;
     //事件定义
     // 用户购买彩票
     public struct UserBuyTicket has copy, drop {
@@ -18,19 +19,12 @@ module lucky1sui::lottery_event {
         user: address, //用户
     }
 
-    //彩票无效
-    public struct InvalidTicket has copy, drop {
-        lottery_id: ID, //id
-        lottery_no: u64, //期数
-        ticket_id: ID, //彩票nft id
-        user: address, //用户
-    }
-
     //彩票号码失效事件
     public struct InvalidTicketNumber has copy, drop {
         lottery_id: ID, //id
         lottery_no: u64, //期数
         ticket_id: ID, //彩票nft id
+        ticket_no: String, //彩票号
         user: address, //用户
     }
 
@@ -78,4 +72,19 @@ module lucky1sui::lottery_event {
         });
     }
 
+    public(package) fun emit_ticket_number_invalid(
+        lottery_id: ID,
+        lottery_no: u64,
+        ticket_id: ID,
+        ticket_no: String,
+        user: address
+    ) {
+        event::emit(InvalidTicketNumber {
+            lottery_id,
+            lottery_no,
+            ticket_id,
+            ticket_no,
+            user
+        });
+    }
 }
