@@ -87,10 +87,10 @@ module lucky1sui::lottery_vault{
 
         let target_coin_type = &type_name::into_string(type_name::get<RewardCoinType>());
 
-        let input_coin_types: vector<std::ascii::String> = vector::empty<std::ascii::String>();
-        let input_rule_ids = vector::empty<address>();
+        let mut input_coin_types: vector<std::ascii::String> = vector::empty<std::ascii::String>();
+        let mut input_rule_ids = vector::empty<address>();
 
-        let i = 0;
+        let mut i = 0;
         while (i < vector::length(&asset_coin_types)) {
             let asset_coin_type = vector::borrow(&asset_coin_types, i);
             let reward_coin_type = vector::borrow(&reward_coin_types, i);
@@ -99,8 +99,8 @@ module lucky1sui::lottery_vault{
             let rule_id = vector::borrow(&rule_ids, i);
 
             if (user_total_reward > user_claimed_reward && reward_coin_type == target_coin_type) {
-                vector::push_back(&mut input_coin_types, *asset_coin_type);
-                vector::append(&mut input_rule_ids, *rule_id);
+                input_coin_types.push_back(*asset_coin_type);
+                input_rule_ids.append(*rule_id)
             };
 
             i = i + 1;

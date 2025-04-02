@@ -87,4 +87,30 @@ module lucky1sui::lottery_event {
             user
         });
     }
+
+    public(package) fun emit_user_win_ticket(
+        lottery_id: ID,
+        lottery_no: u64,
+        user: address,
+        reward: u64
+    ) {
+        event::emit(UserWinTicket {
+            lottery_id,
+            lottery_no,
+            user,
+            reward
+        });
+    }
+
+    public(package) fun emit_lottery_start(
+        lottery_id: ID,
+        lottery_no: u64,
+        user_count: u64
+    ) {
+        event::emit(LotteryStart {
+            lottery_id,
+            lottery_no,
+            user_count
+        });
+    }
 }
