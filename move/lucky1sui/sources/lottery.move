@@ -1,6 +1,6 @@
 module lucky1sui::lottery {
     use sui::object::{Self, UID, ID};
-    use sui::{clock::Clock, random::{Self, Random}, tx_context::{Self, TxContext}, transfer, vec_map::{Self, VecMap}, coin::{Self, Coin}};
+    use sui::{clock::Clock, random::{Self, Random, RandomGenerator}, tx_context::{Self, TxContext}, transfer, vec_map::{Self, VecMap}, coin::{Self, Coin}};
     use std::string::{Self, String};
     use lending_core::account::{AccountCap};
     use lending_core::lending;
@@ -222,9 +222,9 @@ module lucky1sui::lottery {
             assert!(now >= lottery_pool_create_time + hold_on_time, E_NOT_ENOUGH_TIME);
             let mut generator: RandomGenerator = random::new_generator(rand, ctx);
             //随机抽一个
-            let index = random::generate_u64_in_range(&mut generator, 0, joined_ticket_numbers..length());
+            let index = random::generate_u64_in_range(&mut generator, 0, lotteryPool.joined_ticket_numbers.size());
             //拿到中奖彩票id和彩票号
-            let {ticket_no, ticket_id} = joined_ticket_numbers.get_entry_by_idx(index);
+            let [ticket_no, ticket_id] = lotteryPool.joined_ticket_numbers.get_entry_by_idx(index);
 
 
             //根据彩票号拿到彩票
