@@ -4,17 +4,8 @@ module lucky1sui::lottery {
     use sui::balance::{Self, Balance};
     use sui::sui::SUI;
     use std::string::{Self, String};
-    use lending_core::account::{AccountCap};
-    use lending_core::lending;
-    use lending_core::incentive_v2::{Incentive as IncentiveV2};
-    use lending_core::incentive_v3::{Self, Incentive, RewardFund};
-    use lending_core::pool::{Pool};
-    use lending_core::storage::{Storage};
-    use lending_core::version;
-    use lending_core::logic;
-    use oracle::oracle::{PriceOracle};
     use std::type_name;
-    use lucky1sui::{lottery_vault, lottery_event, lottery_ticket::{Self, TicketPool, Ticket}};
+    use lucky1sui::{lottery_event, lottery_ticket::{Self, TicketPool, Ticket}};
 
     // LotteryAdminCap现在是public的，因为内部结构声明不被支持
     public struct LotteryAdminCap has key, store {
@@ -41,9 +32,6 @@ module lucky1sui::lottery {
         lottery_pool_id: ID, //最新一期彩票池id
         ticket_pool_id: ID,
         asset_index: VecMap<String, u8>,
-        //已经中奖的彩票ID
-        winner_ticket_id: VecSet<ID>,
-        account_cap: AccountCap,
         hold_on_time: u64,
     }
 
@@ -78,9 +66,7 @@ module lucky1sui::lottery {
             id: object::new(ctx),
             lottery_pool_id: object::id_from_address(addr_0x1),
             ticket_pool_id: ticket_pool_id,
-            account_cap: lending::create_account(ctx),
             asset_index,
-            winner_ticket_id: vec_set::empty(),
             hold_on_time: 1*24*60*60*1000, //开奖时间。后续会用作校验
 
         };
@@ -122,10 +108,6 @@ module lucky1sui::lottery {
         lotteryPool: &mut LotteryPool, 
         ticketPool: &mut TicketPool,
         depositCoin: Coin<SUI>, 
-        storage: &mut Storage, 
-        incentiveV3: &mut Incentive, 
-        incentiveV2: &mut IncentiveV2, 
-        pool: &mut Pool<SUI>, 
         clock: &Clock, 
         random: &Random,
         ctx: &mut TxContext){
@@ -191,12 +173,7 @@ module lucky1sui::lottery {
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool, 
         ticket: &mut Ticket,
-        storage: &mut Storage,
-        pool: &mut Pool<CoinType>,
-        incentive_v2: &mut IncentiveV2,
-        incentive_v3: &mut Incentive,
         clock: &Clock,
-        oracle: &PriceOracle,
         ctx: &mut TxContext){
         let ticket_id = object::id(ticket);
         let ticket_nums = lottery_ticket::getMutTicketNumberSet(ticket);
@@ -232,15 +209,11 @@ module lucky1sui::lottery {
     }
 
     //开奖
-    public entry fun drawLottery<RewardCoinType>(
+    public entry fun drawLottery(
         clock: &Clock,
         rand: &Random,
         lottery: &mut Lottery,
         lotteryPool: &mut LotteryPool,
-        storage: &mut Storage,
-        incentive: &mut Incentive,
-        reward_fund: &mut RewardFund<RewardCoinType>,
-        oracle: &PriceOracle,
         ctx: &mut TxContext){
             //先抽奖
             //判断时间是否到了抽奖时间
