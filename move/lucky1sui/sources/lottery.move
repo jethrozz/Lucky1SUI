@@ -36,6 +36,8 @@ module lucky1sui::lottery {
         lottery_pool_id: ID, //最新一期彩票池id
         ticket_pool_id: ID,
         asset_index: VecMap<String, u8>,
+        //已经中奖的彩票ID
+        winner_ticket_id: VecSet<ID>,
         account_cap: AccountCap,
         hold_on_time: u64
     }
@@ -49,6 +51,7 @@ module lucky1sui::lottery {
     const E_NOT_SELECT_TICKET_NO:u64 = 14;
     const E_EMPTY_POOL: u64 = 32;
     const E_NOT_LIVE: u64 = 33;
+    const E_NOT_ENOUGH_TIME: u64 = 34; //抽奖时间未到
 
     fun init(ctx: &mut TxContext) {
         let addr_0x1: address = @0x1;
@@ -202,17 +205,32 @@ module lucky1sui::lottery {
 
     //开奖
     public entry fun drawLottery<RewardCoinType>(
+        clock: &Clock,
+        rand: &Random,
         lottery: &Lottery,
         lotteryPool: &mut LotteryPool,
         storage: &mut Storage,
         incentive: &mut Incentive,
         reward_fund: &mut RewardFund<RewardCoinType>,
-        clock: &Clock,
-        random: &Random,
         oracle: &PriceOracle,
         ctx: &mut TxContext){
             //先抽奖
-            
+            //判断时间是否到了抽奖时间
+            let now = clock.timestamp_ms();
+            let lottery_pool_create_time = lotteryPool.create_time;
+            let hold_on_time = lottery.hold_on_time;
+            assert!(now >= lottery_pool_create_time + hold_on_time, E_NOT_ENOUGH_TIME);
+            let mut generator: RandomGenerator = random::new_generator(rand, ctx);
+            //随机抽一个
+            let index = random::generate_u64_in_range(&mut generator, 0, joined_ticket_numbers..length());
+            //拿到中奖彩票id和彩票号
+            let {ticket_no, ticket_id} = joined_ticket_numbers.get_entry_by_idx(index);
+
+
+            //根据彩票号拿到彩票
+            let ticket = lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
+
+
 
         }
 
