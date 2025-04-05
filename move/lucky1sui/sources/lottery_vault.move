@@ -1,4 +1,6 @@
 module lucky1sui::lottery_vault{
+    use lucky1sui::lottery::{Lottery, LotteryPool};
+    use lucky1sui::lottery_event::{Self, RewardClaimable, UserWinTicket};
     use lending_core::{account::{AccountCap}, lending, version, logic};
     use lending_core::incentive_v2::{Incentive as IncentiveV2};
     use lending_core::incentive_v3::{Self, Incentive, RewardFund};
@@ -9,6 +11,18 @@ module lucky1sui::lottery_vault{
     use std::string::{Self, String};
     use std::type_name;
     use sui::coin::{Self, Coin, TreasuryCap};
+
+
+    // 用户中奖
+    public struct UserWinTicketDTO has drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        ticket_id: ID,
+        ticket_no: String,
+        user: address, //中奖用户
+        reward: u256, //奖金
+        reward_coin_type: std::ascii::String, //奖金类型
+    }
 
     public(package) fun deposit<CoinType> (
         asset_index: u8,
@@ -28,7 +42,8 @@ module lucky1sui::lottery_vault{
         clock: &Clock,
         incentive: &mut Incentive,
         storage: &mut Storage,
-        user: address) {
+        account_cap: &AccountCap) {
+        let account_address = object::id_address(account_cap);
         let (
             asset_coin_types,
             reward_coin_types,
@@ -40,11 +55,11 @@ module lucky1sui::lottery_vault{
                 clock,
                 storage,
                 incentive,
-                user
+                account_address
             ),
         );
-        let input_coin_types = vector::empty<String>();
-        let input_rule_ids = vector::empty<address>();
+        let mut input_coin_types: vector<std::ascii::String> = vector::empty<std::ascii::String>();
+        let mut input_rule_ids = vector::empty<address>();
 
         let mut i = 0;
         while (i < vector::length(&asset_coin_types)) {
@@ -52,12 +67,12 @@ module lucky1sui::lottery_vault{
             let reward_coin_type = vector::borrow(&reward_coin_types, i);
             let user_total_reward = *vector::borrow(&user_total_rewards, i);
             let user_claimed_reward = *vector::borrow(&user_claimed_rewards, i);
-            // event::emit( RewardClaimed {
-            //     asset_coin_type: *asset_coin_type,
-            //     reward_coin_type: *reward_coin_type,
-            //     user_claimable_reward: user_total_reward,
-            //     user_claimed_reward: user_claimed_reward
-            // });
+            lottery_event::emit_reward_claimable(
+                *asset_coin_type,
+                *reward_coin_type,
+                user_total_reward,
+                user_claimed_reward
+            );
             i = i + 1;
         };
     }
@@ -67,9 +82,15 @@ module lucky1sui::lottery_vault{
         incentive: &mut Incentive,
         storage: &mut Storage,
         reward_fund: &mut RewardFund<RewardCoinType>,
-        recipient: address,
-        ctx: &mut TxContext,
+        winner: &address,
+        account_cap: &AccountCap,
+        lottery_id: ID,
+        lottery_no: u64,
+        ticket_id: ID,
+        ticket_no: String,
+        ctx: &mut TxContext
     ) {
+        let account_address = object::id_address(account_cap);
         let (
             asset_coin_types,
             reward_coin_types,
@@ -81,16 +102,16 @@ module lucky1sui::lottery_vault{
                 clock,
                 storage,
                 incentive,
-                tx_context::sender(ctx),
+                account_address,
             ),
         );
 
         let target_coin_type = &type_name::into_string(type_name::get<RewardCoinType>());
 
-        let input_coin_types: vector<std::ascii::String> = vector::empty<std::ascii::String>();
-        let input_rule_ids = vector::empty<address>();
-
-        let i = 0;
+        let mut input_coin_types: vector<std::ascii::String> = vector::empty<std::ascii::String>();
+        let mut input_rule_ids = vector::empty<address>();
+        let mut i = 0;
+        let mut user_win_ticket_dtos: vector<UserWinTicketDTO> = vector::empty<UserWinTicketDTO>();
         while (i < vector::length(&asset_coin_types)) {
             let asset_coin_type = vector::borrow(&asset_coin_types, i);
             let reward_coin_type = vector::borrow(&reward_coin_types, i);
@@ -101,22 +122,50 @@ module lucky1sui::lottery_vault{
             if (user_total_reward > user_claimed_reward && reward_coin_type == target_coin_type) {
                 vector::push_back(&mut input_coin_types, *asset_coin_type);
                 vector::append(&mut input_rule_ids, *rule_id);
+
+                let user_win_ticket_dto = UserWinTicketDTO{
+                    lottery_id: lottery_id,
+                    lottery_no: lottery_no,
+                    ticket_id: ticket_id,
+                    ticket_no: ticket_no,
+                    user: *winner,
+                    reward: user_total_reward,
+                    reward_coin_type: *reward_coin_type,
+                };
+                vector::push_back(&mut user_win_ticket_dtos, user_win_ticket_dto);
             };
+
 
             i = i + 1;
         };
 
-        let balance = incentive_v3::claim_reward<RewardCoinType>(
+        let balance = incentive_v3::claim_reward_with_account_cap<RewardCoinType>(
             clock,
             incentive,
             storage,
             reward_fund,
             input_coin_types,
             input_rule_ids,
-            ctx,
+            account_cap,
         );
 
-        transfer::public_transfer(coin::from_balance(balance, ctx), recipient)
+        // 转账给中奖用户
+        transfer::public_transfer(coin::from_balance(balance, ctx), *winner);
+        // 发出中奖事件
+        let mut i = 0;
+        while (i < vector::length(&user_win_ticket_dtos)) {
+            let user_win_ticket_dto = vector::borrow(&user_win_ticket_dtos, i);
+            lottery_event::emit_user_win_ticket(
+                user_win_ticket_dto.lottery_id,
+                user_win_ticket_dto.lottery_no,
+                user_win_ticket_dto.user,
+                user_win_ticket_dto.reward,
+                user_win_ticket_dto.reward_coin_type,
+                user_win_ticket_dto.ticket_id,
+                user_win_ticket_dto.ticket_no
+            );
+            i = i + 1;
+        };
     }
 
     public fun withdraw<CoinType> (
