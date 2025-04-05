@@ -11,3 +11,13 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@layer components {
+    .btn-hover-darker {
+      @apply transition-all duration-200;
+    }
+    
+    .btn-hover-darker:hover {
+      @apply brightness-75 saturate-150;
+    }
+  }

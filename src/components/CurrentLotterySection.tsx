@@ -12,9 +12,19 @@ const CurrentLotterySection: React.FC = () => {
   const { toast } = useToast();
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const { data: currentRound, isLoading } = useQuery({
-    queryKey: ['/api/lottery/current'],
-  });
+  let isLoading = false;
+  let currentRound = {
+    id: 1,
+    roundNumber: 1,
+    totalTickets: 1000,
+    prizePool: 1000,
+    yieldSource: 'Sui',
+    apyRate: 10,
+    endDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+  };
+//  const { data: ,  } = useQuery({
+//    queryKey: ['/api/lottery/current'],
+//  });
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
@@ -25,11 +35,11 @@ const CurrentLotterySection: React.FC = () => {
 
   const handleMax = () => {
     // In a real implementation, this would get the wallet balance
-    setEntryAmount(1000);
+    setEntryAmount(10);
   };
 
   const calculateTickets = () => {
-    return Math.floor(entryAmount / 100);
+    return Math.floor(entryAmount / 1);
   };
 
   const calculateWinProbability = () => {
@@ -164,7 +174,7 @@ const CurrentLotterySection: React.FC = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-neutral-dark">APY Rate:</span>
-                <span className="font-bold text-accent">
+                <span className="font-bold text-primary">
                   {isLoading ? '...' : `${currentRound?.apyRate}%`}
                 </span>
               </div>
@@ -197,7 +207,7 @@ const CurrentLotterySection: React.FC = () => {
                   <div className="flex">
                     <Input
                       type="number"
-                      placeholder="100"
+                      placeholder="1"
                       value={entryAmount}
                       onChange={handleAmountChange}
                       className="w-full rounded-l-lg border border-neutral-light p-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -209,33 +219,20 @@ const CurrentLotterySection: React.FC = () => {
                       MAX
                     </Button>
                   </div>
-                  <p className="text-sm text-neutral-medium mt-1">Minimum entry: 10 SUI</p>
+                  <p className="text-sm text-neutral-medium mt-1">Minimum entry: 1 SUI</p>
                 </div>
                 
                 <div className="mb-6">
                   <label className="block text-neutral-dark mb-2 text-sm font-medium">Number of Tickets</label>
                   <div className="flex items-center justify-between bg-neutral-lightest rounded-lg p-3 border border-neutral-light">
-                    <span>1 ticket = 100 SUI</span>
+                    <span>1 SUI = 1 chance to win</span>
                     <span className="font-bold">{calculateTickets()}</span>
                   </div>
                 </div>
                 
                 <div className="mb-6">
                   <div className="flex justify-between mb-2">
-                    <label className="block text-neutral-dark text-sm font-medium">Win Probability</label>
-                    <span className="text-sm text-primary font-medium">
-                      {walletInfo.isConnected ? `1 in ${isLoading ? '...' : Math.ceil(currentRound?.totalTickets / Math.max(calculateTickets(), 1))}` : '0%'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-neutral-light rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full" 
-                      style={{ 
-                        width: walletInfo.isConnected && calculateTickets() > 0 && currentRound
-                          ? `${Math.min((calculateTickets() / (currentRound.totalTickets + calculateTickets())) * 100, 100)}%`
-                          : '0%' 
-                      }}
-                    />
+                    <label className="block text-neutral-dark text-sm font-medium">One ticket can contain 10 numbers, 1 number = 1 SUI</label>
                   </div>
                 </div>
                 

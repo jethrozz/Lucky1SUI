@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from './ui/logo';
 import { Button } from './ui/button';
-import { useWallet } from '@/lib/suiWallet';
 import { formatWalletAddress } from '@/lib/suiWallet';
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { walletInfo, openModal } = useWallet();
+  const currentAccount = useCurrentAccount();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -31,8 +31,8 @@ const Header: React.FC = () => {
               <Logo size={56} />
             </div>
             <div>
-              <h1 className="text-xl font-bold">CapyLotto</h1>
-              <p className="text-xs text-secondary-light">Sui Lossless Lottery</p>
+              <h1 className="text-xl font-bold">Lucky1Sui</h1>
+              <p className="text-xs text-secondary-light">No-loss lottery platform on Sui</p>
             </div>
           </div>
           
@@ -54,27 +54,7 @@ const Header: React.FC = () => {
           </nav>
           
           {/* Connect Wallet Button */}
-          {walletInfo.isConnected ? (
-            <Button 
-              className="bg-accent hover:bg-accent-light text-primary font-medium"
-              onClick={openModal}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span>{formatWalletAddress(walletInfo.address)}</span>
-            </Button>
-          ) : (
-            <Button 
-              className="bg-accent hover:bg-accent-light text-primary font-medium"
-              onClick={openModal}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span>Connect Wallet</span>
-            </Button>
-          )}
+          <ConnectButton />
           
           {/* Mobile menu button */}
           <button 

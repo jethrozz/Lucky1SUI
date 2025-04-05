@@ -18,14 +18,14 @@ const CTASection: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Button
             onClick={openModal}
-            className="bg-accent hover:bg-accent-light text-primary font-bold py-3 px-8"
+            className="bg-primary hover:bg-primary-light text-white font-bold py-3 px-8"
           >
             Buy Tickets Now
           </Button>
           <Button
             variant="outline"
             asChild
-            className="bg-transparent hover:bg-primary-light text-white font-semibold py-3 px-8 border border-white"
+            className="bg-transparent hover:bg-transparent-light text-white-500 font-semibold py-3 px-8 border border-gray-100 hover:border-black-500"
           >
             <Link href="/how-it-works">
               Learn More

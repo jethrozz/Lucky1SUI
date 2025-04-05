@@ -123,19 +123,19 @@ const History: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-neutral-lightest p-6 rounded-lg border border-neutral-light">
                 <h3 className="text-lg font-bold text-primary mb-2">Total Value Locked</h3>
-                <p className="text-3xl font-bold text-secondary">3,892,415 SUI</p>
+                <p className="text-3xl font-bold text-my-color">3,892,415 SUI</p>
                 <p className="text-sm text-neutral-medium">Current deposits across all users</p>
               </div>
               
               <div className="bg-neutral-lightest p-6 rounded-lg border border-neutral-light">
                 <h3 className="text-lg font-bold text-primary mb-2">Total Prizes Awarded</h3>
-                <p className="text-3xl font-bold text-secondary">459,723 SUI</p>
+                <p className="text-3xl font-bold text-my-color">459,723 SUI</p>
                 <p className="text-sm text-neutral-medium">Since platform launch</p>
               </div>
               
               <div className="bg-neutral-lightest p-6 rounded-lg border border-neutral-light">
                 <h3 className="text-lg font-bold text-primary mb-2">Total Participants</h3>
-                <p className="text-3xl font-bold text-secondary">24,391</p>
+                <p className="text-3xl font-bold text-my-color">24,391</p>
                 <p className="text-sm text-neutral-medium">Unique wallets</p>
               </div>
             </div>
