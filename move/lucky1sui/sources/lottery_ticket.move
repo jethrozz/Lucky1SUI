@@ -3,6 +3,7 @@ module lucky1sui::lottery_ticket{
     use std::string::{Self, String};
     use sui::vec_map::{Self, VecMap};
     use sui::table_vec::{Self, TableVec};
+    use sui::event;
     use lucky1sui::lottery::LotteryPool;
 
     //**常量定义*/
@@ -26,6 +27,9 @@ module lucky1sui::lottery_ticket{
         creator: String,
         ticket_number_set: vector<String>,
         pool_no: u64,
+    }
+    public struct TicketSetCount has copy, drop {
+        count: u64,
     }
 
     //供应不同活动类型的彩票基本信息
@@ -82,15 +86,18 @@ module lucky1sui::lottery_ticket{
 
     public(package) fun getTicket(ticket_pool: &mut TicketPool, lottery_pool_no: u64, random: &Random, ctx : &mut TxContext): Ticket{
         assert!(ticket_pool.is_live, E_NOT_LIVE);
-        let len = table_vec::length(&ticket_pool.tickets);
-        assert!(len > 0, E_EMPTY_POOL);
+        let tickets = &mut ticket_pool.tickets;
+        event::emit(TicketSetCount{
+            count: tickets.length(),
+        });
+        assert!(!tickets.is_empty(), E_EMPTY_POOL);
 
-        let mut ticket = if (len == 1) {
-            table_vec::pop_back(&mut ticket_pool.tickets)
+        let mut ticket = if (tickets.length() == 1) {
+            table_vec::pop_back(tickets)
         } else {
             let mut generator = random::new_generator(random, ctx);
-            let i = random::generate_u64_in_range(&mut generator, 0, len-1);
-            table_vec::swap_remove(&mut ticket_pool.tickets, i)
+            let i = random::generate_u64_in_range(&mut generator, 0, tickets.length()-1);
+            table_vec::swap_remove(tickets, i)
         };
 
         ticket.pool_no = lottery_pool_no;
@@ -136,7 +143,7 @@ module lucky1sui::lottery_ticket{
             id: object::new(ctx),
             tickets: table_vec::empty(ctx),
             num: 0,
-            is_live: false,
+            is_live: true,
         };
         pool
     }
@@ -166,7 +173,6 @@ module lucky1sui::lottery_ticket{
         pool: &mut TicketPool,
         name: String,
         desc: String,
-        number: u64,
         link: String,
         image_url: String,
         project_url: String,

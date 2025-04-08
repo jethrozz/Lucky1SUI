@@ -34,12 +34,15 @@ module lucky1sui::lottery_event {
         lottery_no: u64, //期数
         user: address, //中奖用户
         reward: u64, //奖金
+        coin_type: String, //币种
+        ticket_no: String, //彩票号
+        ticket_id: ID //彩票nft id
     }
 
     //彩票活动开始
     public struct LotteryStart has copy, drop {
-        lottery_id: ID, //id
-        lottery_no: u64, //期数
+        lottery_pool_id: ID, //id
+        lottery_pool_no: u64, //期数
         user_count: u64, //参与用户数
     }
 
@@ -92,24 +95,30 @@ module lucky1sui::lottery_event {
         lottery_id: ID,
         lottery_no: u64,
         user: address,
-        reward: u64
+        reward: u64,
+        coin_type: String,
+        ticket_no: String,
+        ticket_id: ID
     ) {
         event::emit(UserWinTicket {
             lottery_id,
             lottery_no,
             user,
-            reward
+            reward,
+            coin_type,
+            ticket_no,
+            ticket_id
         });
     }
 
     public(package) fun emit_lottery_start(
-        lottery_id: ID,
-        lottery_no: u64,
+        lottery_pool_id: ID,
+        lottery_pool_no: u64,
         user_count: u64
     ) {
         event::emit(LotteryStart {
-            lottery_id,
-            lottery_no,
+            lottery_pool_id,
+            lottery_pool_no,
             user_count
         });
     }
