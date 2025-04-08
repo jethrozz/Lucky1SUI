@@ -204,7 +204,7 @@ const CurrentLotterySection: React.FC = () => {
               <div>
                 <div className="mb-6">
                   <label className="block text-neutral-dark mb-2 text-sm font-medium">Your Entry Amount (SUI)</label>
-                  <div className="flex">
+                  <div className="flex space-x-2">
                     <Input
                       type="number"
                       placeholder="1"

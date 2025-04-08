@@ -61,11 +61,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-                // 添加你的自定义颜色
-                // 或者定义不同深浅度
-                'my-color': {
-                  DEFAULT: '#0a1d2d',
-                }
+        // 添加你的自定义颜色
+        // 或者定义不同深浅度
+        'my-color': {
+          DEFAULT: '#0a1d2d',
+        }
       },
       keyframes: {
         "accordion-down": {

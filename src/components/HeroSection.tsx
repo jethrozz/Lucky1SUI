@@ -41,7 +41,7 @@ const HeroSection: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-xs text-neutral-medium">SUI BLOCKCHAIN</p>
-                    <h3 className="text-xl font-bold">LUCKY TICKET</h3>
+                    <h3 className="text-xl font-bold">LUCKY1SUI TICKET</h3>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-neutral-medium">DRAW DATE</p>
