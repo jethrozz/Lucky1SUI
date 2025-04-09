@@ -67,7 +67,7 @@ module lucky1sui::lottery {
             lottery_pool_id: object::id_from_address(addr_0x1),
             ticket_pool_id: ticket_pool_id,
             asset_index,
-            hold_on_time: 1*24*60*60*1000, //开奖时间。后续会用作校验
+            hold_on_time: 1000, //开奖时间。后续会用作校验
         };
         transfer::share_object(lottery);
         transfer::public_transfer(admin_cap, ctx.sender());
@@ -150,6 +150,7 @@ module lucky1sui::lottery {
         if(lotteryPool.user_deposit.contains(&ctx.sender())){        
             let old_value = lotteryPool.user_deposit.get(&ctx.sender());
             let total = *old_value + deposit_coin_value;
+            lotteryPool.user_deposit.remove(&ctx.sender());
             lotteryPool.user_deposit.insert(ctx.sender(), total);
         }else{
             lotteryPool.user_deposit.insert(ctx.sender(), deposit_coin_value);
@@ -179,21 +180,20 @@ module lucky1sui::lottery {
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
         assert!(lottery.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
         
-        assert!(ticket_nums.length() == 0, E_NOT_SELECT_TICKET_NO);
+        assert!(ticket_nums.length() != 0, E_NOT_SELECT_TICKET_NO);
         //退的金额
         let amount = ticket_nums.length() * 1000000000;
         //先将彩票号移除待抽奖池
         //从彩票中拿到彩票号
         let mut i = 0;
-        while(ticket_nums.length() > 0){
-            let ticket_no = ticket_nums.pop_back();
+        while(i < ticket_nums.length()){
+            //将彩票号从彩票中移除
+            let ticket_no = ticket_nums.borrow(i);
             //将彩票号移除待抽奖池
-            lotteryPool.joined_ticket_numbers.remove(&ticket_no);
+            lotteryPool.joined_ticket_numbers.remove(ticket_no);
             //发出彩票失效事件
             let lotteryId = object::id(lotteryPool);
-            //移除彩票号
-            ticket_nums.remove(i);
-            lottery_event::emit_ticket_number_invalid(lotteryId, lotteryPool.no, ticket_id,ticket_no, ctx.sender());
+            lottery_event::emit_ticket_number_invalid(lotteryId, lotteryPool.no, ticket_id, *ticket_no, ctx.sender());
             i=i+1;
         };
 
@@ -222,7 +222,7 @@ module lucky1sui::lottery {
             assert!(now >= lottery_pool_create_time + hold_on_time, E_NOT_ENOUGH_TIME);
             let mut generator: RandomGenerator = random::new_generator(rand, ctx);
             //随机抽一个
-            let index = random::generate_u64_in_range(&mut generator, 0, lotteryPool.joined_ticket_numbers.size());
+            let index = random::generate_u64_in_range(&mut generator, 0, lotteryPool.joined_ticket_numbers.size()-1);
             //拿到中奖彩票id和彩票号
             let (ticket_no, ticket_id) = lotteryPool.joined_ticket_numbers.get_entry_by_idx(index);
             //转账给中奖用户 测试代码只转1个sui
