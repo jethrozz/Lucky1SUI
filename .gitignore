@@ -8,3 +8,4 @@
 ./move/Move.lock
 ./move/.idea
 node_modules
+*.lock
