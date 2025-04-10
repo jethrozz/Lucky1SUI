@@ -7,3 +7,4 @@
 ./move/build
 ./move/Move.lock
 ./move/.idea
+node_modules

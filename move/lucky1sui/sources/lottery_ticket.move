@@ -32,7 +32,6 @@ module lucky1sui::lottery_ticket{
  public struct TicketPool has key, store {
         id: UID,
         tickets: TableVec<Ticket>,
-        count: u64,
         is_live: bool,
     }
     fun init(otw: LOTTERY_TICKET, ctx : &mut TxContext){
@@ -82,15 +81,15 @@ module lucky1sui::lottery_ticket{
 
     public(package) fun getTicket(ticket_pool: &mut TicketPool, lottery_pool_no: u64, random: &Random, ctx : &mut TxContext): Ticket{
         assert!(ticket_pool.is_live, E_NOT_LIVE);
-        let len = table_vec::length(&ticket_pool.tickets);
-        assert!(len > 0, E_EMPTY_POOL);
+        let tickets = &mut ticket_pool.tickets;
+        assert!(!tickets.is_empty(), E_EMPTY_POOL);
 
-        let mut ticket = if (len == 1) {
+        let mut ticket = if (tickets.length() == 1) {
             table_vec::pop_back(&mut ticket_pool.tickets)
         } else {
             let mut generator = random::new_generator(random, ctx);
             let i = random::generate_u64_in_range(&mut generator, 0, len-1);
-            table_vec::swap_remove(&mut ticket_pool.tickets, i)
+            table_vec::swap_remove(tickets, i)
         };
 
         ticket.pool_no = lottery_pool_no;
@@ -145,8 +144,7 @@ module lucky1sui::lottery_ticket{
         let pool = TicketPool {
             id: object::new(ctx),
             tickets: table_vec::empty(ctx),
-            count: 0,
-            is_live: false,
+            is_live: true,
         };
         pool
     }
@@ -163,7 +161,6 @@ module lucky1sui::lottery_ticket{
         let TicketPool {
             id,
             tickets,
-            count:_,
             is_live:_,
         } = pool;
 
@@ -194,6 +191,5 @@ module lucky1sui::lottery_ticket{
         };
         //存入池子
         table_vec::push_back(&mut pool.tickets, ticket);
-        pool.count = pool.count + 1;
     }
 }

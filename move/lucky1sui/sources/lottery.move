@@ -86,7 +86,7 @@ module lucky1sui::lottery {
     public entry fun startFirstLottery(_: &LotteryAdminCap, lottery: &mut Lottery, clock : & Clock, ctx: &mut TxContext){
         let ox1_id = object::id_from_address(@0x1);
         //如果彩票活动已经被开始了，则抛出1错误码
-        assert!(lottery.lottery_pool_id != ox1_id, CAN_NOT_START_LOTTERY);
+        assert!(lottery.lottery_pool_id == ox1_id, CAN_NOT_START_LOTTERY);
 
         let lottery_pool = LotteryPool{
             id: object::new(ctx),
@@ -126,9 +126,9 @@ module lucky1sui::lottery {
         
         //coin 的金额必须是整数且大于1
         let coin_count: u64 = depositCoin.value() / 1000000000;
+        assert!(coin_count > 0, NOT_SUPPORT_COIN_AMOUNT);
         let coin_mod = depositCoin.value() % 1000000000;
         assert!(coin_mod == 0, NOT_SUPPORT_COIN_AMOUNT);
-        assert!(coin_count > 0, NOT_SUPPORT_COIN_AMOUNT);
         //生成彩票nft
         let mut ticket=lottery_ticket::getTicket(ticketPool, lotteryPool.no, random, ctx);
         //生成彩票号码
@@ -196,7 +196,7 @@ module lucky1sui::lottery {
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
         assert!(lottery.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
         
-        assert!(ticket_nums.length() == 0, E_NOT_SELECT_TICKET_NO);
+        assert!(ticket_nums.length() != 0, E_NOT_SELECT_TICKET_NO);
         //退的金额
         let mut amount = ticket_nums.length() * 1000000000;
         //拿到用户当前已存的金额
