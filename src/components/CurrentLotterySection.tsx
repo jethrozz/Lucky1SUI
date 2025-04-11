@@ -1,31 +1,21 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useWallet, simulateTransaction } from '@/lib/suiWallet';
 import { useToast } from '@/hooks/use-toast';
+import { LotteryPool } from '@/dto/LotteryPool';
 
-const CurrentLotterySection: React.FC = () => {
-  const [entryAmount, setEntryAmount] = useState<number>(100);
+const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPoolId: string}> = ({lotteryPool, ticketPoolId} ) => {
+  const [entryAmount, setEntryAmount] = useState<number>(10);
   const { walletInfo, openModal } = useWallet();
   const { toast } = useToast();
   const [isPurchasing, setIsPurchasing] = useState(false);
-
-  let isLoading = false;
-  let currentRound = {
-    id: 1,
-    roundNumber: 1,
-    totalTickets: 1000,
-    prizePool: 1000,
-    yieldSource: 'Sui',
-    apyRate: 10,
-    endDate: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-  };
-//  const { data: ,  } = useQuery({
-//    queryKey: ['/api/lottery/current'],
-//  });
-
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    if (!lotteryPool) return;
+    setIsLoading(false);
+  }, [lotteryPool]);
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     if (!isNaN(value) && value >= 0) {
@@ -43,9 +33,9 @@ const CurrentLotterySection: React.FC = () => {
   };
 
   const calculateWinProbability = () => {
-    if (!currentRound) return '0%';
+    if (!lotteryPool) return '0%';
     
-    const totalTickets = currentRound.totalTickets;
+    const totalTickets = lotteryPool.ticket_sets.size;
     const myTickets = calculateTickets();
     
     if (myTickets === 0 || totalTickets === 0) return '0%';
@@ -55,69 +45,7 @@ const CurrentLotterySection: React.FC = () => {
   };
 
   const handleBuyTickets = async () => {
-    if (!walletInfo.isConnected) {
-      openModal();
-      return;
-    }
-
-    if (entryAmount < 10) {
-      toast({
-        title: "Invalid amount",
-        description: "Minimum entry amount is 10 SUI",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsPurchasing(true);
-      
-      // Simulate blockchain transaction
-      const result = await simulateTransaction(
-        walletInfo.address,
-        entryAmount,
-        currentRound?.id || 0
-      );
-
-      if (result.success) {
-        // Create ticket in our database
-        const ticketResponse = await fetch('/api/tickets', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ticketNumber: Math.floor(Math.random() * 10000),
-            roundId: currentRound?.id,
-            walletAddress: walletInfo.address,
-            entryAmount: entryAmount.toString(),
-            purchaseDate: new Date(),
-          }),
-        });
-
-        if (ticketResponse.ok) {
-          toast({
-            title: "Success!",
-            description: `You've purchased ${calculateTickets()} ticket(s) for the current lottery round.`,
-            variant: "default",
-          });
-        } else {
-          throw new Error('Failed to create ticket');
-        }
-      } else {
-        throw new Error(result.error || 'Transaction failed');
-      }
-    } catch (error) {
-      console.error('Error buying tickets:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to buy tickets",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPurchasing(false);
-    }
-  };
+  }
 
   return (
     <section className="py-12 bg-neutral-lightest">
@@ -133,21 +61,26 @@ const CurrentLotterySection: React.FC = () => {
           {/* Lottery Info Card */}
           <Card className="bg-white rounded-xl shadow-md p-6 border border-neutral-light">
             <h3 className="text-xl font-bold text-primary mb-4">
-              {isLoading ? 'Loading...' : `Round #${currentRound?.roundNumber} Details`}
+              {isLoading ? 'Loading...' : `Round #${lotteryPool?.no} Details`}
             </h3>
             
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-neutral-dark">Prize Pool:</span>
+                <span className="text-neutral-dark">Total Amount:</span>
                 <span className="font-bold text-primary">
-                  {isLoading ? '...' : `${Number(currentRound?.prizePool).toLocaleString()} SUI`}
+                  {isLoading ? '...' : `${Number(lotteryPool?.total_amount_pool).toLocaleString()} SUI`}
                 </span>
               </div>
-              
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-dark">Total Address:</span>
+                <span className="font-bold text-primary">
+                  {isLoading ? '...' : `${lotteryPool?.user_deposit.size}`}
+                </span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-neutral-dark">Total Tickets:</span>
                 <span className="font-bold text-primary">
-                  {isLoading ? '...' : currentRound?.totalTickets.toLocaleString()}
+                  {isLoading ? '...' : `${lotteryPool?.ticket_sets.size}`}
                 </span>
               </div>
               
@@ -168,22 +101,16 @@ const CurrentLotterySection: React.FC = () => {
               <div className="flex justify-between items-center">
                 <span className="text-neutral-dark">Yield Source:</span>
                 <span className="font-bold text-primary">
-                  {isLoading ? '...' : currentRound?.yieldSource}
+                  {isLoading ? '...' : "Sui"}
                 </span>
               </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-dark">APY Rate:</span>
-                <span className="font-bold text-primary">
-                  {isLoading ? '...' : `${currentRound?.apyRate}%`}
-                </span>
-              </div>
+            
               
               <div className="flex justify-between items-center">
                 <span className="text-neutral-dark">Entry Deadline:</span>
                 <span className="font-bold text-primary">
                   {isLoading ? '...' : 
-                    new Date(currentRound?.endDate).toLocaleDateString('en-US', {
+                    lotteryPool?.end_date.toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',

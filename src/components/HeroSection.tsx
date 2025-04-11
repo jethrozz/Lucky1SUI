@@ -1,11 +1,10 @@
 import React from 'react';
-import { useWallet } from '@/lib/suiWallet';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
+import { LotteryPool } from '@/dto/LotteryPool';
 
-const HeroSection: React.FC = () => {
-  const { openModal } = useWallet();
-
+const HeroSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
+  const buy = () => {}
   return (
     <section className="bg-gradient-to-br from-primary to-primary-light text-white py-12 md:py-20">
       <div className="container mx-auto px-4">
@@ -19,10 +18,12 @@ const HeroSection: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
               <Button
-                onClick={openModal}
+                
                 className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-6 text-lg shadow-md"
               >
-                Buy Tickets
+                <Link href={`/current-lottery?lotteryPool=${lotteryPool}`}>
+                    Buy Tickets
+                </Link>
               </Button>
               <Button
                 variant="outline"
@@ -57,17 +58,17 @@ const HeroSection: React.FC = () => {
                 <div className="bg-neutral-lightest p-4 rounded-lg mb-4">
                   <div className="flex justify-between mb-2">
                     <span className="text-xs text-neutral-medium">TICKET NUMBER</span>
-                    <span className="text-xs text-neutral-medium">PRIZE POOL</span>
+                    <span className="text-xs text-neutral-medium">TOTAL AMOUNT</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-mono text-lg font-bold">#42731</span>
-                    <span className="font-bold text-lg text-accent-dark">48,395 SUI</span>
+                    <span className="font-bold text-lg text-accent-dark">{lotteryPool?.total_amount_pool} SUI</span>
                   </div>
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-xs text-neutral-medium">ENTRY AMOUNT</p>
-                    <p className="text-lg font-bold">100 SUI</p>
+                    <p className="text-lg font-bold">10 SUI</p>
                   </div>
                   <div className="flex items-center">
                     <span className="text-xs bg-primary text-white px-3 py-1.5 rounded font-bold shadow-sm">LOSSLESS</span>

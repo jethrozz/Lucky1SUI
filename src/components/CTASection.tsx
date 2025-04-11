@@ -2,8 +2,9 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useWallet } from '@/lib/suiWallet';
 import { Link } from 'wouter';
+import { LotteryPool } from '@/dto/LotteryPool';
 
-const CTASection: React.FC = () => {
+const CTASection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
   const { openModal } = useWallet();
 
   return (
@@ -20,7 +21,9 @@ const CTASection: React.FC = () => {
             onClick={openModal}
             className="bg-primary hover:bg-primary-light text-white font-bold py-3 px-8"
           >
-            Buy Tickets Now
+            <Link href={`/current-lottery?lotteryPool=${lotteryPool}`}>
+              Buy Tickets Now
+            </Link>
           </Button>
           <Button
             variant="outline"

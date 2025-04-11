@@ -1,6 +1,4 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -9,7 +7,7 @@ import History from "@/pages/history";
 import FAQ from "@/pages/faq";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WalletModal from "@/components/WalletModal";
+import CurrentLotterySection from "@/components/CurrentLotterySection";
 
 function Router() {
   return (
@@ -18,6 +16,7 @@ function Router() {
       <Route path="/how-it-works" component={HowItWorks}/>
       <Route path="/history" component={History}/>
       <Route path="/faq" component={FAQ}/>
+      <Route path="/current-lottery" component={CurrentLotterySection} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
@@ -26,17 +25,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow">
           <Router />
         </main>
         <Footer />
-        <WalletModal />
+        <Toaster />
       </div>
-      <Toaster />
-    </QueryClientProvider>
   );
 }
 
