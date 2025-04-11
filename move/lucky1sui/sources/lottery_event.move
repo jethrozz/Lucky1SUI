@@ -32,10 +32,9 @@ module lucky1sui::lottery_event {
 
 
     // 用户中奖
-    public struct UserWinTicket has copy, drop {
+    public struct WinTicket has copy, drop {
         lottery_id: ID, //id
         lottery_no: u64, //期数
-        user: address, //中奖用户
         reward: u256, //奖金
         reward_coin_type: std::ascii::String, //奖金类型
         ticket_id: ID, //彩票nft id
@@ -118,19 +117,17 @@ module lucky1sui::lottery_event {
         });
     }
 
-    public(package) fun emit_user_win_ticket(
+    public(package) fun emit_win_ticket(
         lottery_id: ID,
         lottery_no: u64,
-        user: address,
         reward: u256,
         reward_coin_type: std::ascii::String,
         ticket_id: ID,
         ticket_no: String
     ) {
-        event::emit(UserWinTicket {
+        event::emit(WinTicket {
             lottery_id,
             lottery_no,
-            user,
             reward,
             reward_coin_type,
             ticket_id,
