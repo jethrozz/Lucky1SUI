@@ -153,6 +153,7 @@ module lucky1sui::lottery_ticket{
             tickets: table_vec::empty(ctx),
             is_live: true,
         };
+        transfer::share_object(pool);
         pool
     }
 

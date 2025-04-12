@@ -68,10 +68,8 @@ module lucky1sui::lottery {
             lottery_pool_id: object::id_from_address(addr_0x1),
             ticket_pool_id,
         };
-        transfer::share_object(ticket_pool);
         transfer::share_object(lottery);
         transfer::public_transfer(admin_cap, ctx.sender());
-        
     }
 
 
@@ -113,7 +111,6 @@ module lucky1sui::lottery {
 
     //参与抽奖
     public entry fun joinLotteryPool<CoinType>(
-        lottery: &Lottery,
         lottery_pool: &mut LotteryPool, 
         ticket_pool: &mut TicketPool,
         deposit_coin: Coin<CoinType>, 
@@ -150,7 +147,7 @@ module lucky1sui::lottery {
         //拿到资产索引
         let asset = *lottery_pool.asset_index.get(target_coin_type);
         // 获取 account_cap 的引用
-        let account_cap_ref = &lottery.account_cap;
+        let account_cap_ref = &lottery_pool.account_cap;
         // 调用 deposit 函数, 存入navi
         let deposit_coin_value = deposit_coin.value();
         lottery_vault::deposit<CoinType>(asset, account_cap_ref, deposit_coin, storage, pool, incentive_v2, incentive_v3, clock);
@@ -250,7 +247,6 @@ module lucky1sui::lottery {
         incentive_v2: &mut IncentiveV2,
         incentive_v3: &mut Incentive,
         oracle: &PriceOracle,
-        target_coin_type: &String,
         ctx: &mut TxContext){
             //先抽奖
             //判断时间是否到了抽奖时间
@@ -258,6 +254,9 @@ module lucky1sui::lottery {
             let lottery_pool_create_time = lottery_pool.create_time;
             let hold_on_time = lottery_pool.hold_on_time;
             assert!(now >= lottery_pool_create_time + hold_on_time, E_NOT_ENOUGH_TIME);
+            let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
+            assert!(lottery_pool.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
+
             let mut generator: RandomGenerator = random::new_generator(rand, ctx);
                         //随机抽一个
             let index = random::generate_u64_in_range(&mut generator, 0, lottery_pool.joined_ticket_numbers.size() - 1);
@@ -269,8 +268,6 @@ module lucky1sui::lottery {
             lottery_vault::get_reward_claimable_rewards<RewardCoinType>(clock, incentive_v3, storage, &lottery_pool.account_cap, lotteryId, lottery_pool.no, *ticket_id, *ticket_no, ctx);
             //赋值状态为已开奖待领奖
             lottery_pool.status = 2;
-
-
             let mut amount = 0;
             let mut i = 0;
             while(i < lottery_pool.user_deposit.size()){
