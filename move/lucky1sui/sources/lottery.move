@@ -178,7 +178,6 @@ module lucky1sui::lottery {
 
     //退出抽奖
     public entry fun exitLotteryPool<CoinType>(
-        lottery: &Lottery,
         lottery_pool: &mut LotteryPool, 
         ticket: &mut Ticket,
         storage: &mut Storage,
@@ -211,7 +210,7 @@ module lucky1sui::lottery {
             left_amount = 0;
         }else{
             left_amount = *ticket_amount - amount;
-        }
+        };
         //先将彩票号移除待抽奖池
         //从彩票中拿到彩票号
         let mut i = 0;
@@ -222,9 +221,10 @@ module lucky1sui::lottery {
             lottery_pool.joined_ticket_numbers.remove(ticket_no);
             i=i+1;
         };
+        lottery_ticket::removeTicket(ticket);
         //退款操作
         // 获取 account_cap 的引用
-        let account_cap_ref = &lottery.account_cap;
+        let account_cap_ref = &lottery_pool.account_cap;
         let asset = *lottery_pool.asset_index.get(target_coin_type);
         let coin = lottery_vault::withdraw<CoinType>(asset, account_cap_ref, amount, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
         // 将 coin 转移给 ctx.sender()
@@ -233,7 +233,7 @@ module lucky1sui::lottery {
         lottery_pool.user_deposit.remove(&ctx.sender());
         if(left_amount > 0){
             lottery_pool.user_deposit.insert(ctx.sender(), left_amount);
-        }
+        };
         //发出彩票失效事件
         let lotteryId = object::id(lottery_pool);
         lottery_event::emit_ticket_number_invalid(lotteryId, lottery_pool.no, ticket_id,*ticket_nums, ctx.sender(), amount);
@@ -249,7 +249,6 @@ module lucky1sui::lottery {
         pool: &mut Pool<CoinType>,
         incentive_v2: &mut IncentiveV2,
         incentive_v3: &mut Incentive,
-        reward_fund: &mut RewardFund<RewardCoinType>,
         oracle: &PriceOracle,
         target_coin_type: &String,
         ctx: &mut TxContext){
@@ -312,9 +311,7 @@ module lucky1sui::lottery {
         let ticket_id = object::id(ticket);
         assert!(lottery_pool.winner_ticket_id == ticket_id, E_CLAIM_REWARD_TICKET_ERROR);
         //获取奖励
-        let input_coin_types = lottery_pool.input_coin_types;
-        let input_rule_ids = lottery_pool.input_rule_ids;
-        lottery_vault::claim_reward_entry<RewardCoinType>(clock, incentive, storage, reward_fund, ctx.sender(), input_coin_types, input_rule_ids, ctx);
+        lottery_vault::claim_reward_entry<RewardCoinType>(clock, incentive, storage, reward_fund, &ctx.sender(), &lottery_pool.account_cap, ctx);
         //赋值状态为已领奖
         lottery_pool.status = 3;
     }

@@ -99,6 +99,10 @@ module lucky1sui::lottery_ticket{
         ticket
     }
 
+    public(package) fun removeTicket(ticket: &mut Ticket){
+        ticket.is_in_pool = false;
+    }
+
     public(package) fun addTicketNumber(t: &mut Ticket, pool_no: u64, count:u64, clock: &Clock){
         let mut i=1;
         while(i <= count){
