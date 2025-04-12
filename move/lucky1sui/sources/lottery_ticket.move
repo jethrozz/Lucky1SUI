@@ -26,6 +26,7 @@ module lucky1sui::lottery_ticket{
         creator: String,
         ticket_number_set: vector<String>,
         pool_no: u64,
+        is_in_pool: bool,
     }
 
     //供应不同活动类型的彩票基本信息
@@ -88,11 +89,13 @@ module lucky1sui::lottery_ticket{
             table_vec::pop_back(&mut ticket_pool.tickets)
         } else {
             let mut generator = random::new_generator(random, ctx);
+            let len = tickets.length();
             let i = random::generate_u64_in_range(&mut generator, 0, len-1);
             table_vec::swap_remove(tickets, i)
         };
 
         ticket.pool_no = lottery_pool_no;
+        ticket.is_in_pool = true;
         ticket
     }
 
@@ -188,6 +191,7 @@ module lucky1sui::lottery_ticket{
             creator: b"LuckyOneSui".to_string(),
             ticket_number_set: vector::empty<String>(),
             pool_no: 0,
+            is_in_pool: false,
         };
         //存入池子
         table_vec::push_back(&mut pool.tickets, ticket);
