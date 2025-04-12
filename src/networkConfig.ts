@@ -13,6 +13,10 @@ import {
   STORAGE_ID,
   PRICE_ORACLE_ID,
   SUI_COIN_TYPE,
+  GRAPHQL_URL_DEVNET,
+  GRAPHQL_URL_TESTNET,
+  GRAPHQL_URL_MAINNET,
+  REWARD_COIN_TYPE,
 } from "./constants.ts";
 import { createNetworkConfig } from "@mysten/dapp-kit";
 
@@ -34,6 +38,9 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         storageId: STORAGE_ID,
         priceOracleId: PRICE_ORACLE_ID,
         suiCoinType: SUI_COIN_TYPE,
+        graphqlUrl: GRAPHQL_URL_DEVNET,
+        chain: "sui:devnet",
+        rewardCoinType: REWARD_COIN_TYPE,
       },
     },
     testnet: {
@@ -51,7 +58,11 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         rewardFundId: REWARDFUND_ID,
         storageId: STORAGE_ID,
         priceOracleId: PRICE_ORACLE_ID,
-        suiCoinType: SUI_COIN_TYPE,      },
+        suiCoinType: SUI_COIN_TYPE,
+        graphqlUrl: GRAPHQL_URL_TESTNET,
+        chain: "sui:testnet",
+        rewardCoinType: REWARD_COIN_TYPE,
+      },
     },
     mainnet: {
       url: getFullnodeUrl("mainnet"),
@@ -69,6 +80,9 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         storageId: STORAGE_ID,
         priceOracleId: PRICE_ORACLE_ID,
         suiCoinType: SUI_COIN_TYPE,
+        graphqlUrl: GRAPHQL_URL_MAINNET,
+        chain: "sui:mainnet",
+        rewardCoinType: REWARD_COIN_TYPE,
       },
     },
   });

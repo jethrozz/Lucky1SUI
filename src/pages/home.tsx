@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {useSuiClient,useSuiClientQuery } from "@mysten/dapp-kit";
+import {useCurrentAccount, useSuiClient,useSuiClientQuery } from "@mysten/dapp-kit";
 import { useNetworkVariable } from "@/networkConfig";
 import HeroSection from '@/components/HeroSection';
 import StatsSection from '@/components/StatsSection';

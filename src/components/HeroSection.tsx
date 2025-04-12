@@ -68,7 +68,7 @@ const HeroSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) =
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-xs text-neutral-medium">ENTRY AMOUNT</p>
-                    <p className="text-lg font-bold">10 SUI</p>
+                    <p className="text-lg font-bold">1 SUI</p>
                   </div>
                   <div className="flex items-center">
                     <span className="text-xs bg-primary text-white px-3 py-1.5 rounded font-bold shadow-sm">LOSSLESS</span>
