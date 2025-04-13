@@ -29,12 +29,10 @@ const Header: React.FC = () => {
         <Link href="/">
         <div className="flex items-center space-x-3">
             {/* Logo */}
-            <div className="h-14 w-14 relative">
-              <Logo size={56} />
-            </div>
+            <Logo />
             <div>
-              <h1 className="text-xl font-bold">Lucky1Sui</h1>
-              <p className="text-xs text-secondary-light">No-loss lottery platform on Sui</p>
+              <h1 className="text-xl font-bold mt-2">Lucky1Sui</h1>
+              <p className="text-xs text-secondary-light ">No-loss lottery platform on Sui</p>
             </div>
           </div>
         </Link>

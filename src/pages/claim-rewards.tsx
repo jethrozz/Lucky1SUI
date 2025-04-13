@@ -5,7 +5,7 @@ import {WinnerTicket} from '@/dto/LotteryPool';
 import { Card } from '@/components/ui/card';
 import { LotteryPool } from '@/dto/LotteryPool';
 import { Button } from '@/components/ui/button';
-import { useCurrentAccount, useSignAndExecuteTransaction,  useSuiClient } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { LotteryTicket } from '@/dto/LotteryTicket';
 import { Select } from "@radix-ui/themes";
 import { useToast } from '@/hooks/use-toast';

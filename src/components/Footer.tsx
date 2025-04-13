@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
                 <Logo />
                 <div>
                   <h3 className="text-xl font-bold text-my-color">Lucky1Sui</h3>
-                  <p className="text-xs text-my-color">Sui Lossless Lottery</p>
+                  <p className="text-xs text-my-color">Lossless Lottery</p>
                 </div>
               </div>
             </Link>
