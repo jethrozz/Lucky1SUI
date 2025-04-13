@@ -64,13 +64,13 @@ module lucky1sui::lottery {
             id: object::new(ctx)
         };
 
-        let ticket_pool = lottery_ticket::createTicketPool(ctx);
-        let ticket_pool_id = object::id(&ticket_pool);
+        let ticket_pool_id = lottery_ticket::createTicketPool(ctx);
         let lottery = Lottery {
             id: object::new(ctx),
             lottery_pool_id: object::id_from_address(addr_0x1),
             ticket_pool_id,
         };
+        
         transfer::share_object(lottery);
         transfer::public_transfer(admin_cap, ctx.sender());
     }
@@ -200,13 +200,15 @@ module lucky1sui::lottery {
         assert!(now >= lottery_pool_create_time + hold_on_time - 1*60*60*1000, E_NOT_ENOUGH_TIME_TO_REFUND); 
 
         let ticket_id = object::id(ticket);
-        let ticket_nums = lottery_ticket::getMutTicketNumberSet(ticket);
+
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
         assert!(lottery_pool.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
         
-        assert!(ticket_nums.length() != 0, E_NOT_SELECT_TICKET_NO);
+        lottery_ticket::removeTicket(ticket);
+        let ticket_nums = lottery_ticket::getMutTicketNumberSet(ticket);
+        
         //退的金额
-        let mut amount = ticket_nums.length() * 1000000000;
+        let mut amount = ticket_nums.length() * 1_000_000_000;
         //拿到用户当前已存的金额
         let ticket_amount = lottery_pool.user_deposit.get(&ctx.sender());
         let mut left_amount = 0;
@@ -219,7 +221,7 @@ module lucky1sui::lottery {
         };
         //先将彩票号移除待抽奖池
         //从彩票中拿到彩票号
-        lottery_ticket::removeTicket(ticket);
+
         let mut i = 0;
         while(ticket_nums.length() > 0){
             //将彩票号从彩票中移除
@@ -304,8 +306,8 @@ module lucky1sui::lottery {
             // 获取 lottery_pool 的 ID
             let new_lottery_pool_id = object::id(&new_lottery_pool);
             lottery.lottery_pool_id = new_lottery_pool_id;
-            transfer::share_object(new_lottery_pool);
             let user_count = new_lottery_pool.user_deposit.size();
+            transfer::share_object(new_lottery_pool);
             //发出事件
             lottery_event::emit_lottery_start(new_lottery_pool_id, no, user_count);
         }

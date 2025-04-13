@@ -1,6 +1,6 @@
 module lucky1sui::lottery_vault{
     use lucky1sui::lottery::{Lottery, LotteryPool};
-    use lucky1sui::lottery_event::{Self, RewardClaimable, UserWinTicket};
+    use lucky1sui::lottery_event::{Self, RewardClaimable, WinTicket};
     use lending_core::{account::{AccountCap}, lending, version, logic};
     use lending_core::incentive_v2::{Incentive as IncentiveV2};
     use lending_core::incentive_v3::{Self, Incentive, RewardFund};
@@ -11,17 +11,6 @@ module lucky1sui::lottery_vault{
     use std::string::{Self, String};
     use std::type_name;
     use sui::coin::{Self, Coin, TreasuryCap};
-
-
-    // 用户中奖
-    public struct UserWinTicketDTO {
-        lottery_id: ID, //id
-        lottery_no: u64, //期数
-        ticket_id: ID,
-        ticket_no: String,
-        reward: u256, //奖金
-        reward_coin_type: std::ascii::String, //奖金类型
-    }
 
     public(package) fun deposit<CoinType> (
         asset_index: u8,
@@ -69,7 +58,6 @@ module lucky1sui::lottery_vault{
         let mut input_rule_ids = vector::empty<address>();
         let mut user_can_claim_rewards: vector<u256> = vector::empty<u256>();
         let mut i = 0;
-        let mut user_win_ticket_dtos: vector<UserWinTicketDTO> = vector::empty<UserWinTicketDTO>();
 
         while (i < vector::length(&asset_coin_types)) {
             let asset_coin_type = vector::borrow(&asset_coin_types, i);
@@ -82,30 +70,15 @@ module lucky1sui::lottery_vault{
                 vector::push_back(&mut input_coin_types, *asset_coin_type);
                 vector::append(&mut input_rule_ids, *rule_id);
                 vector::push_back(&mut user_can_claim_rewards, user_total_reward - user_claimed_reward);
-                let user_win_ticket_dto = UserWinTicketDTO{
-                    lottery_id: lottery_id,
-                    lottery_no: lottery_no,
-                    ticket_id: ticket_id,
-                    ticket_no: ticket_no,
-                    reward: user_total_reward,
-                    reward_coin_type: *reward_coin_type,
-                };
-                vector::push_back(&mut user_win_ticket_dtos, user_win_ticket_dto);
+                lottery_event::emit_win_ticket(
+                    lottery_id,
+                    lottery_no,
+                    user_total_reward,
+                    *reward_coin_type,
+                    ticket_id,
+                    ticket_no
+                );
             };
-            i = i + 1;
-        };
-        // 发出中奖事件
-        let mut i = 0;
-        while (i < vector::length(&user_win_ticket_dtos)) {
-            let user_win_ticket_dto = vector::borrow(&user_win_ticket_dtos, i);
-            lottery_event::emit_win_ticket(
-                user_win_ticket_dto.lottery_id,
-                user_win_ticket_dto.lottery_no,
-                user_win_ticket_dto.reward,
-                user_win_ticket_dto.reward_coin_type,
-                user_win_ticket_dto.ticket_id,
-                user_win_ticket_dto.ticket_no
-            );
             i = i + 1;
         };
     }

@@ -148,18 +148,19 @@ module lucky1sui::lottery_ticket{
         _manager_cap: &ManagerCap,
         ctx: &mut TxContext,
     ) {
-        let pool = createTicketPool(ctx);
-        transfer::share_object(pool);
+        createTicketPool(ctx);
     }
-    public(package) fun createTicketPool(ctx: &mut TxContext): TicketPool{
+    public(package) fun createTicketPool(ctx: &mut TxContext): ID{
         let pool = TicketPool {
             id: object::new(ctx),
             tickets: table_vec::empty(ctx),
             is_live: true,
         };
+        let ticket_pool_id = object::id(&pool);
         transfer::share_object(pool);
-        pool
+        ticket_pool_id
     }
+
 
     //关闭池子
     entry fun closeTicketPool(
