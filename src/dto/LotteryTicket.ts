@@ -23,10 +23,12 @@ export interface LotteryTicket {
     creator: string;
     ticket_number_set: string[];
     pool_no: number;
+    is_in_pool: boolean;
     }
 
 export function getLotteryTicket(data: any): LotteryTicket | null {
     if(!data) return null;
+    let is_in_pool = data.is_in_pool?data.is_in_pool:false;
 
     let lotteryTicket: LotteryTicket = {
         id: data.id,
@@ -38,6 +40,7 @@ export function getLotteryTicket(data: any): LotteryTicket | null {
         creator: data.creator,
         ticket_number_set: data.ticket_number_set,
         pool_no: parseInt(data.pool_no) as number,
+        is_in_pool
     }
     return lotteryTicket;
 }

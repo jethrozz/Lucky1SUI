@@ -43,7 +43,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
     if (!lotteryPool) return;
     setIsLoading(false);
     getUsetTickets(account?.address as string, lotteryPool.no.toString(), graphqlUrl).then(tickets => {
-    setUserTickets(tickets);
+      setUserTickets(tickets);
     });
   }, [lotteryPool, account]);
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +64,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
     return lotteryPool?.user_deposit.get(account?.address as string) !== undefined;
   }
   const calculateTickets = () => {
-    return userTickets.length;
+    return userTickets.filter(item => item.is_in_pool).length;
   };
 
   const calculateWinProbability = () => {
@@ -73,7 +73,9 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
     const totalTicketNumbers = lotteryPool.total_amount_pool;
     let myTickets = 0;
     for(let i = 0; i < userTickets.length; i++){
-      myTickets += userTickets[i].ticket_number_set.length;
+      if(userTickets[i].is_in_pool){
+        myTickets += userTickets[i].ticket_number_set.length;
+      }
     }
     
     if (myTickets === 0 || totalTicketNumbers === 0) return '0%';
@@ -426,7 +428,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
           </DialogHeader>
           {/* 在这里添加您的NFT展示内容 */}
           <Flex direction="column" gap="3">
-            {userTickets.map((ticket) => (
+            {userTickets.filter(item => item.is_in_pool).map((ticket) => (
                 <Flex 
                     key={ticket.id}
                     align="center" 
