@@ -219,6 +219,13 @@ module lucky1sui::lottery {
             i=i+1;
         };
         lottery_ticket::removeTicket(ticket);
+
+        //更新用户已存入的资金
+        lottery_pool.user_deposit.remove(&ctx.sender());
+        if(left_amount > 0){
+            lottery_pool.user_deposit.insert(ctx.sender(), left_amount);
+        };
+
         //退款操作
         // 获取 account_cap 的引用
         let account_cap_ref = &lottery_pool.account_cap;
@@ -226,11 +233,7 @@ module lucky1sui::lottery {
         let coin = lottery_vault::withdraw<CoinType>(asset, account_cap_ref, amount, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
         // 将 coin 转移给 ctx.sender()
         transfer::public_transfer(coin, ctx.sender());
-        //更新用户已存入的资金
-        lottery_pool.user_deposit.remove(&ctx.sender());
-        if(left_amount > 0){
-            lottery_pool.user_deposit.insert(ctx.sender(), left_amount);
-        };
+
         //发出彩票失效事件
         let lotteryId = object::id(lottery_pool);
         lottery_event::emit_ticket_number_invalid(lotteryId, lottery_pool.no, ticket_id,*ticket_nums, ctx.sender(), amount);
@@ -265,9 +268,10 @@ module lucky1sui::lottery {
             lottery_pool.winner_ticket_id = *ticket_id;
             //发出事件
             let lotteryId = object::id(lottery_pool);
-            lottery_vault::get_reward_claimable_rewards<RewardCoinType>(clock, incentive_v3, storage, &lottery_pool.account_cap, lotteryId, lottery_pool.no, *ticket_id, *ticket_no, ctx);
-            //赋值状态为已开奖待领奖
+                        //赋值状态为已开奖待领奖
             lottery_pool.status = 2;
+            lottery_vault::get_reward_claimable_rewards<RewardCoinType>(clock, incentive_v3, storage, &lottery_pool.account_cap, lotteryId, lottery_pool.no, *ticket_id, *ticket_no, ctx);
+
             let mut amount = 0;
             let mut i = 0;
             while(i < lottery_pool.user_deposit.size()){
@@ -307,9 +311,9 @@ module lucky1sui::lottery {
         //判断中奖彩票是否存在
         let ticket_id = object::id(ticket);
         assert!(lottery_pool.winner_ticket_id == ticket_id, E_CLAIM_REWARD_TICKET_ERROR);
-        //获取奖励
-        lottery_vault::claim_reward_entry<RewardCoinType>(clock, incentive, storage, reward_fund, &ctx.sender(), &lottery_pool.account_cap, ctx);
         //赋值状态为已领奖
         lottery_pool.status = 3;
+        //获取奖励
+        lottery_vault::claim_reward_entry<RewardCoinType>(clock, incentive, storage, reward_fund, &ctx.sender(), &lottery_pool.account_cap, ctx);
     }
 }
