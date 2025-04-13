@@ -37,21 +37,20 @@ lucky1SUI/
 - Ticket对象：彩票奖券，当有一个用户购买时，和SUI cion 1比1，1张彩票最多10个号码。中奖是和彩票号码对应。一个号码1次机会
 ### 函数设计
 #### 启动第一期抽奖
-fun startFirstLottery(cap, clock, lottery);
+fun startFirstLottery();
 启动第一期抽奖。只有管理员才有权限开启
 
 #### 用户参与抽奖
-fun joinLotteryPool(lottery: & Lottery,lotteryPool: &mut LotteryPool, suiCoin: Coin<sui>, storgae: Storage, incentive_v1:Incentive, Incentive_v2:IncentiveV2, pool: Pool, clock: Clock, ctx: &mut TxContext)
+fun joinLotteryPool()
 
-#### 用户提取资金
-fun exitLotteryPool(lottery: & Lottery,lotteryPool: &mut LotteryPool, amount: u64, storgae: Storage, incentive_v1:Incentive, Incentive_v2:IncentiveV2, pool: Pool,clock: Clock ctx: &mut TxContext)
-//amount必须是整数，如1000000000
+#### 用户退出抽奖
+fun exitLotteryPool()
 
-#### 开奖
-fun drawLottery(clock: Clock, random: Random, lottery: & Lottery, lotteryPool: &mut LotteryPool, ctx: &mut TxContext )
+#### 开奖并开始下一期
+fun drawLottery()
 
-#### 生成新一期抽奖
-私有函数
+#### 领奖
+fun claim_reward()
 
 ### 事件设计
 #### 用户购买彩票事件
@@ -86,25 +85,31 @@ fun drawLottery(clock: Clock, random: Random, lottery: & Lottery, lotteryPool: &
     }
 ```
 
-#### 彩票号码失效事件
-一张彩票的其中一个号码失效
+#### 彩票失效事件
+一张彩票失效
 ```rust
-    //生成彩票
+    //彩票失效事件
     public struct InvalidTicketNumber has copy, drop {
         lottery_id: ID, //id
         lottery_no: u64, //期数
         ticket_id: ID, //彩票nft id
+        ticket_nos: vector<String>, //彩票号
         user: address, //用户
+        refund_amount: u64, //退款金额
     }
 ```
 
-#### 用户中奖事件
+#### 中奖事件
 ```rust
-    public struct UserWinTicket has copy, drop {
+    // 中奖
+    //如有多个coinType 会发出多次
+    public struct WinTicket has copy, drop {
         lottery_id: ID, //id
         lottery_no: u64, //期数
-        user: address, //中奖用户
-        reward: u64, //奖金
+        reward: u256, //奖金
+        reward_coin_type: std::ascii::String, //奖金类型
+        ticket_id: ID, //彩票nft id
+        ticket_no: String, //彩票号
     }
 ```
 
