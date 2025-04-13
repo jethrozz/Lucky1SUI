@@ -48,13 +48,16 @@ module lucky1sui::lottery {
     const NOT_SUPPORT_COIN_TYPE:u64 = 12;
     const NOT_SUPPORT_COIN_AMOUNT:u64 = 13;
     const E_NOT_SELECT_TICKET_NO:u64 = 14;
+    const E_TICKET_NOT_IN_POOL:u64 = 15;
+
     const E_EMPTY_POOL: u64 = 32;
     const E_NOT_LIVE: u64 = 33;
     const E_NOT_ENOUGH_TIME: u64 = 34; //抽奖时间未到
     const E_NOT_ENOUGH_TIME_TO_REFUND: u64 = 35; //开奖前1小时不能退款
     const E_CLAIM_REWARD_TICKET_ERROR: u64 = 36; //领奖彩票错误(非领奖彩票)
     const E_CLAIM_REWARD_STATUS_ERROR: u64 = 37; //领奖状态错误(非已开奖待领奖)
-    
+    const E_LOTTERY_POOL_STATUS_NOT_1: u64 = 38; //领奖状态错误(非已开奖待领奖)
+
     fun init(ctx: &mut TxContext) {
         let addr_0x1: address = @0x1;
         let admin_cap = LotteryAdminCap {
@@ -122,6 +125,8 @@ module lucky1sui::lottery {
         random: &Random,
         ctx: &mut TxContext){
         //目前只支持sui
+        //判断状态是否为进行中
+        assert!(lottery_pool.status == 1, E_LOTTERY_POOL_STATUS_NOT_1);
         let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
         assert!(lottery_pool.asset_index.contains(target_coin_type), NOT_SUPPORT_COIN_TYPE);
         
@@ -184,6 +189,10 @@ module lucky1sui::lottery {
         clock: &Clock,
         oracle: &PriceOracle,
         ctx: &mut TxContext){
+        //如果彩票已经是无效的则直接返回error
+        assert!(lottery_ticket::ticket_is_in_pool(ticket), E_TICKET_NOT_IN_POOL);
+        //判断状态是否为进行中
+        assert!(lottery_pool.status == 1, E_LOTTERY_POOL_STATUS_NOT_1);
         let now = clock.timestamp_ms();
         let lottery_pool_create_time = lottery_pool.create_time;
         let hold_on_time = lottery_pool.hold_on_time;
@@ -210,6 +219,7 @@ module lucky1sui::lottery {
         };
         //先将彩票号移除待抽奖池
         //从彩票中拿到彩票号
+        lottery_ticket::removeTicket(ticket);
         let mut i = 0;
         while(ticket_nums.length() > 0){
             //将彩票号从彩票中移除
@@ -218,7 +228,6 @@ module lucky1sui::lottery {
             lottery_pool.joined_ticket_numbers.remove(ticket_no);
             i=i+1;
         };
-        lottery_ticket::removeTicket(ticket);
 
         //更新用户已存入的资金
         lottery_pool.user_deposit.remove(&ctx.sender());
@@ -251,6 +260,9 @@ module lucky1sui::lottery {
         incentive_v3: &mut Incentive,
         oracle: &PriceOracle,
         ctx: &mut TxContext){
+
+            //判断状态是否为进行中
+            assert!(lottery_pool.status == 1, E_LOTTERY_POOL_STATUS_NOT_1);
             //先抽奖
             //判断时间是否到了抽奖时间
             let now = clock.timestamp_ms();
@@ -306,11 +318,13 @@ module lucky1sui::lottery {
         reward_fund: &mut RewardFund<RewardCoinType>,
         lottery_pool: &mut LotteryPool,
         ctx: &mut TxContext){
-        //判断状态是否为已开奖待领奖
-        assert!(lottery_pool.status == 2, E_CLAIM_REWARD_STATUS_ERROR);
-        //判断中奖彩票是否存在
+        //如果彩票已经是无效的则直接返回error
+        assert!(lottery_ticket::ticket_is_in_pool(ticket), E_TICKET_NOT_IN_POOL);
+                //判断中奖彩票是否存在
         let ticket_id = object::id(ticket);
         assert!(lottery_pool.winner_ticket_id == ticket_id, E_CLAIM_REWARD_TICKET_ERROR);
+        //判断状态是否为已开奖待领奖
+        assert!(lottery_pool.status == 2, E_CLAIM_REWARD_STATUS_ERROR);
         //赋值状态为已领奖
         lottery_pool.status = 3;
         //获取奖励
