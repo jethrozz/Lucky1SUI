@@ -3,15 +3,14 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Transaction } from "@mysten/sui/transactions";
-import { useCurrentAccount, useSignAndExecuteTransaction,  useSuiClient,
-  useSuiClientQuery } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignAndExecuteTransaction,  useSuiClient } from "@mysten/dapp-kit";
 import { LotteryPool } from '@/dto/LotteryPool';
 import { getUsetTickets } from '@/lib/LotteryPoolUtils';
 import { LotteryTicket } from '@/dto/LotteryTicket';
 import { useNetworkVariable } from '@/networkConfig';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
-import { Flex,Avatar, Text } from "@radix-ui/themes";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Flex, Text } from "@radix-ui/themes";
 
 const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPoolId: string}> = ({lotteryPool, ticketPoolId} ) => {
   const [entryAmount, setEntryAmount] = useState<number>(1);
@@ -27,10 +26,10 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
   const [userTickets, setUserTickets] = useState<Array<LotteryTicket>>([]);
   const { toast } = useToast();
   const graphqlUrl = useNetworkVariable("graphqlUrl");
+  const randomId = useNetworkVariable("randomId");
   const packageId = useNetworkVariable("packageId");
   const lotteryId = useNetworkVariable("lotteryId");
   const clockId = useNetworkVariable("clockId");
-  const randomId = useNetworkVariable("randomId");
   const incentiveV3Id = useNetworkVariable("incentiveV3Id");
   const incentiveV2Id = useNetworkVariable("incentiveV2Id");
   const poolSuiId = useNetworkVariable("poolSuiId");
@@ -136,7 +135,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       tx.moveCall({
         target: `${packageId}::lottery::joinLotteryPool`,
         arguments: [tx.object(lotteryId), tx.object(lotteryPoolId), tx.object(ticketPoolId), suiCoin, tx.object(storageId), tx.object(incentiveV3Id), tx.object(incentiveV2Id), tx.object(poolSuiId), tx.object(clockId), tx.object(randomId)],
-        typeArguments: [SUI_COIN_TYPE],
+        typeArguments: [suiCoinType],
       });
       signAndExecuteTransaction(
         { transaction: tx, chain: chain },
@@ -354,7 +353,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
                   <label className="block text-neutral-dark mb-2 text-sm font-medium">Number of Tickets</label>
                   <div className="flex items-center justify-between bg-neutral-lightest rounded-lg p-3 border border-neutral-light">
                     <span>1 SUI = 1 chance to win</span>
-                    <span className="font-bold">{calculateTickets()}</span>
+                    <span className="font-bold">1</span>
                   </div>
                 </div>
                 

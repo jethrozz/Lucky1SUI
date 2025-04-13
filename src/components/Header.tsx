@@ -18,6 +18,7 @@ const Header: React.FC = () => {
     { name: 'Home', path: '/' },
     { name: 'How It Works', path: '/how-it-works' },
     { name: 'History', path: '/history' },
+    { name: 'Claim', path: '/claim-rewards' },
     { name: 'FAQ', path: '/faq' }
   ];
 
@@ -25,7 +26,8 @@ const Header: React.FC = () => {
     <header className="bg-primary text-white shadow-md">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
+        <Link href="/">
+        <div className="flex items-center space-x-3">
             {/* Logo */}
             <div className="h-14 w-14 relative">
               <Logo size={56} />
@@ -35,6 +37,8 @@ const Header: React.FC = () => {
               <p className="text-xs text-secondary-light">No-loss lottery platform on Sui</p>
             </div>
           </div>
+        </Link>
+
           
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex space-x-6">

@@ -4,6 +4,10 @@ export const TICKET_POOL_ID = "0xd5c9f91b37e1e0094f7c511a48fcddb98ff6fe609fa26bb
 export const CLOCK_ID = "0x0000000000000000000000000000000000000000000000000000000000000006";
 export const RANDOM_ID = "0x0000000000000000000000000000000000000000000000000000000000000008";
 export const NFT_TYPE = PACKAGE_ID + "::lottery_ticket::Ticket";
+export const LOTTERY_POOL_TYPE = PACKAGE_ID + "::lottery::LotteryPool";
+
+export const TICKET_WIN_EVENT= PACKAGE_ID+"::lottery_event::UserWinTicket";
+
 export const SUI_COIN_TYPE = "0x2::sui::SUI";
 export const STORAGE_ID = "0xbb4e2f4b6205c2e2a2db47aeb4f830796ec7c005f88537ee775986639bc442fe";
 export const POOL_SUI_ID = "0x96df0fce3c471489f4debaaa762cf960b3d97820bd1f3f025ff8190730e958c5";
