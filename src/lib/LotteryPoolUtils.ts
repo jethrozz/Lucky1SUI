@@ -1,5 +1,4 @@
 import { NFT_TYPE,TICKET_WIN_EVENT,LOTTERY_POOL_TYPE } from '@/constants';
-import { useNetworkVariable } from '@/networkConfig';
 import { SuiGraphQLClient } from '@mysten/sui/graphql';
 import { graphql } from '@mysten/sui/graphql/schemas/latest';
 import { getLotteryTicket, LotteryTicket } from '@/dto/LotteryTicket';
@@ -74,7 +73,7 @@ export const getUsetTickets = async (address: string, lotteryPoolNo: string, gra
         try {
             //todo 待补充判断 是否是有效的ticket
             let isInPool = true;
-            return jsonString.pool_no === lotteryPoolNo && isInPool;
+            return (jsonString as any).pool_no === lotteryPoolNo && isInPool;
         } catch (error) {
             console.error('Failed to parse JSON:', jsonString, error);
             return false;

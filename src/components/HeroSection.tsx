@@ -4,7 +4,6 @@ import { Link } from 'wouter';
 import { LotteryPool } from '@/dto/LotteryPool';
 
 const HeroSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
-  const buy = () => {}
   return (
     <section className="bg-gradient-to-br from-primary to-primary-light text-white py-12 md:py-20">
       <div className="container mx-auto px-4">

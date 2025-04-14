@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import { Card } from '@/components/ui/card';
 import { useNetworkVariable } from '@/networkConfig';
 import {getHistoryWinners} from '@/lib/LotteryPoolUtils';
 import {WinnerTicket} from '@/dto/LotteryPool';
@@ -13,8 +11,7 @@ const PreviousWinnersSection: React.FC = () => {
   const graphqlUrl = useNetworkVariable("graphqlUrl");
   const [isLoading, setIsLoading] = useState(true);
   const [winnerTicket, setwinnerTicket] = useState<Array<WinnerTicket>>([]);
-  const [isRewardDialogOpen, setRewardDialogOpen] = useState(false);
-  const [selectedReward, setSelectedReward] = useState<WinnerTicket| null>(null);
+
   useEffect(() => {
     getHistoryWinners(graphqlUrl).then(tickets => {
       setwinnerTicket(tickets);

@@ -1,8 +1,8 @@
 import React from 'react';
 import HowItWorksSection from '@/components/HowItWorksSection';
 import CTASection from '@/components/CTASection';
-
-const HowItWorks: React.FC = () => {
+import { LotteryPool } from '@/dto/LotteryPool';
+const HowItWorks: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool})=> {
   return (
     <>
       <div className="bg-gradient-to-br from-primary to-primary-light text-white py-12">
@@ -60,7 +60,7 @@ const HowItWorks: React.FC = () => {
         </div>
       </div>
       
-      <CTASection />
+      <CTASection lotteryPool={lotteryPool}/>
     </>
   );
 };
