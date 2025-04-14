@@ -107,7 +107,7 @@ module lucky1sui::lottery {
             joined_ticket_numbers: vec_map::empty(),
             account_cap: lending::create_account(ctx),
             asset_index,
-            hold_on_time: 7*24*60*60*1000, //开奖时间。后续会用作校验
+            hold_on_time: 1*24*60*60*1000, //开奖时间。后续会用作校验
         };
         lottery_pool    
     }
@@ -197,7 +197,7 @@ module lucky1sui::lottery {
         let lottery_pool_create_time = lottery_pool.create_time;
         let hold_on_time = lottery_pool.hold_on_time;
         //时间限制，开奖前1小时不能退款
-        assert!(now >= lottery_pool_create_time + hold_on_time - 1*60*60*1000, E_NOT_ENOUGH_TIME_TO_REFUND); 
+        assert!(now < lottery_pool_create_time + hold_on_time - 1*60*60*1000, E_NOT_ENOUGH_TIME_TO_REFUND); 
 
         let ticket_id = object::id(ticket);
 
@@ -223,7 +223,7 @@ module lucky1sui::lottery {
         //从彩票中拿到彩票号
 
         let mut i = 0;
-        while(ticket_nums.length() > 0){
+        while(i < ticket_nums.length()){
             //将彩票号从彩票中移除
             let ticket_no = ticket_nums.borrow(i);
             //将彩票号移除待抽奖池

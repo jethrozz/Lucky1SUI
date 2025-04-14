@@ -28,14 +28,14 @@ module lucky1sui::lottery_vault{
 
     public(package) fun get_reward_claimable_rewards<RewardCoinType>( 
         clock: &Clock,
-        incentive: &mut Incentive,
+        incentive: &Incentive,
         storage: &mut Storage,
         account_cap: &AccountCap,
         lottery_id: ID,
         lottery_no: u64,
         ticket_id: ID,
         ticket_no: String,
-        ctx: &mut TxContext
+        _ctx: &mut TxContext
     ) {
         let account_address = object::id_address(account_cap);
         let (

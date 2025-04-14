@@ -30,7 +30,7 @@ module lucky1sui::lottery_ticket{
     }
 
     //供应不同活动类型的彩票基本信息
- public struct TicketPool has key, store {
+    public struct TicketPool has key, store {
         id: UID,
         tickets: TableVec<Ticket>,
         is_live: bool,
