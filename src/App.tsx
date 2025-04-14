@@ -1,60 +1,80 @@
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Container, Flex, Heading } from "@radix-ui/themes";
-import { useState } from "react";
-import { Counter } from "./Counter";
-import { CreateCounter } from "./CreateCounter";
+import { useEffect, useState } from 'react';
+import { Switch, Route } from "wouter";
+import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/pages/not-found";
+import Home from "@/pages/home";
+import HowItWorks from "@/pages/how-it-works";
+import History from "@/pages/history";
+import FAQ from "@/pages/faq";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import CurrentLotterySection from "@/components/CurrentLotterySection";
+import ClaimRewards from "@/pages/claim-rewards";
+import { useNetworkVariable } from "@/networkConfig";
+import {useSuiClientQuery } from "@mysten/dapp-kit";
+import { LotteryPool ,createLotteryPool } from '@/dto/LotteryPool';
+
+
+function Router({ lotteryPool, ticketPoolId }: { lotteryPool: LotteryPool | null; ticketPoolId: string }) {
+  return (
+    <Switch>
+      <Route path="/" component={() => (<Home lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />)} />
+      <Route path="/how-it-works" component={HowItWorks}/>
+      <Route path="/history" component={History}/>
+      <Route path="/faq" component={FAQ}/>
+      <Route path="/current-lottery" component={() => <CurrentLotterySection lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />} />
+      <Route path="/claim-rewards" component={() => <ClaimRewards lotteryPool={lotteryPool} />} />
+      {/* Fallback to 404 */}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
 
 function App() {
-  const currentAccount = useCurrentAccount();
-  const [counterId, setCounter] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return isValidSuiObjectId(hash) ? hash : null;
+  const [lotteryPoolId, setLotteryPoolId] = useState<string>("-1");
+  const [ticketPoolId, setTicketPoolId] = useState<string>("-1");
+  const [lotteryPool, setLotteryPool] = useState<LotteryPool | null>(null);
+  const lotteryId = useNetworkVariable("lotteryId");
+  const { data, isPending, error } = useSuiClientQuery("getObject", {
+    id: lotteryId,
+    options: {
+        showContent: true,
+        showOwner: true,
+    },
+  });
+  const { data: lotteryData, isPending: isLotteryPending, error: lotteryError } = useSuiClientQuery("getObject", {
+    id: lotteryPoolId,
+    options: {
+      showContent: true,
+      showOwner: true,
+    },
   });
 
-  return (
-    <>
-      <Flex
-        position="sticky"
-        px="4"
-        py="2"
-        justify="between"
-        style={{
-          borderBottom: "1px solid var(--gray-a2)",
-        }}
-      >
-        <Box>
-          <Heading>dApp Starter Template</Heading>
-        </Box>
+  useEffect(() => {
+    if (!isPending && data?.data?.content) {
+      setLotteryPoolId((data.data.content as any).fields.lottery_pool_id as string);
+      setTicketPoolId((data.data.content as any).fields.ticket_pool_id as string);
+    }
+  }, [isPending, data]);
 
-        <Box>
-          <ConnectButton />
-        </Box>
-      </Flex>
-      <Container>
-        <Container
-          mt="5"
-          pt="2"
-          px="4"
-          style={{ background: "var(--gray-a2)", minHeight: 500 }}
-        >
-          {currentAccount ? (
-            counterId ? (
-              <Counter id={counterId} />
-            ) : (
-              <CreateCounter
-                onCreated={(id) => {
-                  window.location.hash = id;
-                  setCounter(id);
-                }}
-              />
-            )
-          ) : (
-            <Heading>Please connect your wallet</Heading>
-          )}
-        </Container>
-      </Container>
-    </>
+  useEffect(() => {
+    if (!isLotteryPending && lotteryData) {
+      console.log(lotteryData);
+      const lotteryPool = createLotteryPool(lotteryData.data?.content as any);
+      setLotteryPool(lotteryPool);
+    }
+  }, [isLotteryPending, lotteryData]);
+
+
+  return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-grow">
+          <Router lotteryPool={lotteryPool} ticketPoolId={ticketPoolId}/>
+        </main>
+        <Footer />
+        <Toaster />
+      </div>
   );
 }
 

@@ -6,7 +6,7 @@
 ```
 lucky1SUI/
 ├── move/                  # Move智能合约目录
-│   ├── lucky_capy         # 彩票项目合约
+│   ├── lucky1sui         # 彩票项目合约
 │       ├──source/         # 合约源码
 │       ├──tests/          # 单元测试目录
 │       └── Move.toml      # 合约工程配置
@@ -31,7 +31,104 @@ lucky1SUI/
 - 智能合约：Move语言
 
 ## 合约设计
+### 对象设计
+- Lottery对象：由系统初始化，保存最新一期的抽奖池id和AccountCap。
+- LotteryPool对象：抽奖池，第一期手动初始化，后续每期在上一期结束后自动生成。保存参与用户的信息和奖券信息
+- Ticket对象：彩票奖券，当有一个用户购买时，和SUI cion 1比1，1张彩票最多10个号码。中奖是和彩票号码对应。一个号码1次机会
+### 入口函数
+#### 启动第一期抽奖
 
+```rust
+    fun startFirstLottery();
+```
+启动第一期抽奖。只有管理员才有权限开启
+
+#### 用户参与抽奖
+```rust
+    fun joinLotteryPool()
+```
+#### 用户退出抽奖
+```rust
+    fun exitLotteryPool()
+```
+#### 开奖并开始下一期
+```rust
+    fun drawLottery()
+```
+#### 领奖
+```rust
+    fun claim_reward()
+```
+### 事件设计
+#### 用户购买彩票事件
+```rust
+    // 用户购买彩票
+    public struct UserBuyTicket has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        user: address, //购买用户
+        amount: u64 //购买金额
+    }
+```
+#### 生成彩票事件
+```rust
+    //生成彩票
+    public struct GenerateTicket has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        ticket_id: ID, //彩票nft id
+        user: address, //用户
+    }
+```
+#### 彩票无效事件
+一张彩票的所有号码失效
+```rust
+    //生成彩票
+    public struct InvalidTicket has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        ticket_id: ID, //彩票nft id
+        user: address, //用户
+    }
+```
+
+#### 彩票失效事件
+一张彩票失效
+```rust
+    //彩票失效事件
+    public struct InvalidTicketNumber has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        ticket_id: ID, //彩票nft id
+        ticket_nos: vector<String>, //彩票号
+        user: address, //用户
+        refund_amount: u64, //退款金额
+    }
+```
+
+#### 中奖事件
+```rust
+    // 中奖
+    //如有多个coinType 会发出多次
+    public struct WinTicket has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        reward: u256, //奖金
+        reward_coin_type: std::ascii::String, //奖金类型
+        ticket_id: ID, //彩票nft id
+        ticket_no: String, //彩票号
+    }
+```
+
+#### 彩票活动开始事件
+```rust
+    //彩票活动开始
+    public struct LotteryStart has copy, drop {
+        lottery_id: ID, //id
+        lottery_no: u64, //期数
+        user_count: u64, //参与用户数
+    }
+```
 
 ## 前端运行
 

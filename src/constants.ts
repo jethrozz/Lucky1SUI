@@ -1,3 +1,20 @@
-export const DEVNET_COUNTER_PACKAGE_ID = "0xTODO";
-export const TESTNET_COUNTER_PACKAGE_ID = "0xTODO";
-export const MAINNET_COUNTER_PACKAGE_ID = "0xTODO";
+export const PACKAGE_ID = "0x783fe589142cbe0edab47994696e70c5ebc5d41a8cdcccaa7f31f1403402ebb3";
+export const LOTTERY_ID = "0xfb4f49e1ce5ff34154dc8600e0e822cb8bd8d644e6d5b9f903f4e6cf246c5981";
+export const TICKET_POOL_ID = "0xe0a21deaf87144f3bea8af68b00ceedb7610f0ff7bc2a9a02a714f2cb33a45c9";
+export const NFT_TYPE = PACKAGE_ID + "::lottery_ticket::Ticket";
+export const LOTTERY_POOL_TYPE = PACKAGE_ID + "::lottery::LotteryPool";
+export const TICKET_WIN_EVENT= PACKAGE_ID+"::lottery_event::UserWinTicket";
+export const CLOCK_ID = "0x0000000000000000000000000000000000000000000000000000000000000006";
+export const RANDOM_ID = "0x0000000000000000000000000000000000000000000000000000000000000008";
+
+export const SUI_COIN_TYPE = "0x2::sui::SUI";
+export const STORAGE_ID = "0xbb4e2f4b6205c2e2a2db47aeb4f830796ec7c005f88537ee775986639bc442fe";
+export const POOL_SUI_ID = "0x96df0fce3c471489f4debaaa762cf960b3d97820bd1f3f025ff8190730e958c5";
+export const INCENTIVE_V2_ID = "0xf87a8acb8b81d14307894d12595541a73f19933f88e1326d5be349c7a6f7559c";
+export const INCENTIVE_V3_ID = "0x62982dad27fb10bb314b3384d5de8d2ac2d72ab2dbeae5d801dbdb9efa816c80";
+export const REWARDFUND_ID = "0x7093cf7549d5e5b35bfde2177223d1050f71655c7f676a5e610ee70eb4d93b5c";
+export const PRICE_ORACLE_ID = "0x1568865ed9a0b5ec414220e8f79b3d04c77acc82358f6e5ae4635687392ffbef";
+export const REWARD_COIN_TYPE = "0x549e8b69270defbfafd4f94e17ec44cdbdd99820b33bda2278dea3b9a32d3f55::cert::CERT";
+export const GRAPHQL_URL_TESTNET = "https://sui-testnet.mystenlabs.com/";
+export const GRAPHQL_URL_MAINNET = "https://sui-mainnet.mystenlabs.com/";
+export const GRAPHQL_URL_DEVNET = "https://sui-devnet.mystenlabs.com/";
