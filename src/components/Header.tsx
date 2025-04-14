@@ -27,12 +27,12 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
         <Link href="/">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1">
             {/* Logo */}
             <Logo />
             <div>
-              <h1 className="text-xl font-bold mt-2">Lucky1Sui</h1>
-              <p className="text-xs text-secondary-light ">No-loss lottery platform on Sui</p>
+              <h1 className="text-xl font-bold mt-1">Lucky1Sui</h1>
+              <p className="text-xs text-secondary-light">No-loss lottery platform on Sui</p>
             </div>
           </div>
         </Link>

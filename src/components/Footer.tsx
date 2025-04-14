@@ -10,10 +10,10 @@ const Footer: React.FC = () => {
           {/* Logo and Info */}
           <div className="md:col-span-1">
             <Link href="/">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
                 <Logo />
                 <div>
-                  <h3 className="text-xl font-bold text-my-color">Lucky1Sui</h3>
+                  <h3 className="text-xl font-bold text-my-color mt-1">Lucky1Sui</h3>
                   <p className="text-xs text-my-color">Lossless Lottery</p>
                 </div>
               </div>
