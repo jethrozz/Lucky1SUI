@@ -81,6 +81,9 @@ function converToLotteryPool(item: any): LotteryPool {
     total_amount_pool: 0,
     end_date: new Date(),
   }
+  if(!(item.id instanceof String)){
+    lotteryPool.id = item.id.id;
+  }
   if (item.status) {
     lotteryPool.status = item.status;
   } else {

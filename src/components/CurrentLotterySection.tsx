@@ -112,12 +112,14 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       });
       return;
     }
+    console.log("lotteryPool", lotteryPool);
     setIsPurchasing(true);
     const { address } = account;
     try{
       
       //判断余额是否足够
-      const balance = await suiClient.getBalance({owner: address, coinType: SUI_COIN_TYPE});
+      const balance = await suiClient.getBalance({owner: address, coinType: suiCoinType});
+      
       const amount = entryAmount * 1_000_000_000;
       if(parseInt(balance.totalBalance) < amount){
         toast({
@@ -133,11 +135,11 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       let lotteryPoolId = lotteryPool.id;
       //调用lottery合约的joinLotteryPool方法
       const [suiCoin] = tx.splitCoins(tx.gas, [amount]); // 分割 SUI 代币
-
+      
       tx.moveCall({
         target: `${packageId}::lottery::joinLotteryPool`,
-        arguments: [tx.object(lotteryId), tx.object(lotteryPoolId), tx.object(ticketPoolId), suiCoin, tx.object(storageId), tx.object(incentiveV3Id), tx.object(incentiveV2Id), tx.object(poolSuiId), tx.object(clockId), tx.object(randomId)],
-        typeArguments: [suiCoinType],
+        arguments: [tx.object(lotteryPoolId), tx.object(ticketPoolId), suiCoin, tx.object(storageId), tx.object(incentiveV3Id), tx.object(incentiveV2Id), tx.object(poolSuiId), tx.object(clockId), tx.object(randomId)],
+        typeArguments: [balance.coinType],
       });
       signAndExecuteTransaction(
         { transaction: tx, chain: chain },
