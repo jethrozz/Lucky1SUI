@@ -1,11 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useWallet } from '@/lib/suiWallet';
 import { Link } from 'wouter';
 import { LotteryPool } from '@/dto/LotteryPool';
 
 const CTASection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
-  const { openModal } = useWallet();
 
   return (
     <section className="py-16 bg-gradient-to-br from-primary to-primary-light text-white">
@@ -18,7 +16,6 @@ const CTASection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) =>
         
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Button
-            onClick={openModal}
             className="bg-primary hover:bg-primary-light text-white font-bold py-3 px-8"
           >
             <Link href={`/current-lottery?lotteryPool=${lotteryPool}`}>

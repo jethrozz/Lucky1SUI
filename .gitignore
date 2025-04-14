@@ -9,3 +9,4 @@
 ./move/.idea
 node_modules
 *.lock
+dist

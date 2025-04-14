@@ -28,7 +28,6 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
   const graphqlUrl = useNetworkVariable("graphqlUrl");
   const randomId = useNetworkVariable("randomId");
   const packageId = useNetworkVariable("packageId");
-  const lotteryId = useNetworkVariable("lotteryId");
   const clockId = useNetworkVariable("clockId");
   const incentiveV3Id = useNetworkVariable("incentiveV3Id");
   const incentiveV2Id = useNetworkVariable("incentiveV2Id");
@@ -244,9 +243,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
     }
 
   }
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-  };
+
 
   return (
     <section className="py-12 bg-neutral-lightest">

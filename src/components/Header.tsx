@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from './ui/logo';
-import { Button } from './ui/button';
-import { formatWalletAddress } from '@/lib/suiWallet';
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { ConnectButton } from "@mysten/dapp-kit";
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const currentAccount = useCurrentAccount();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

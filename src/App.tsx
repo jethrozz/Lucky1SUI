@@ -19,11 +19,11 @@ function Router({ lotteryPool, ticketPoolId }: { lotteryPool: LotteryPool | null
   return (
     <Switch>
       <Route path="/" component={() => (<Home lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />)} />
-      <Route path="/how-it-works" component={HowItWorks}/>
+      <Route path="/how-it-works" component={() => (<HowItWorks lotteryPool={lotteryPool} />)}/>
       <Route path="/history" component={History}/>
-      <Route path="/faq" component={FAQ}/>
+      <Route path="/faq" component={() => (<FAQ lotteryPool={lotteryPool} />)} />
       <Route path="/current-lottery" component={() => <CurrentLotterySection lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />} />
-      <Route path="/claim-rewards" component={() => <ClaimRewards lotteryPool={lotteryPool} />} />
+      <Route path="/claim-rewards" component={() => <ClaimRewards />} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
@@ -35,14 +35,14 @@ function App() {
   const [ticketPoolId, setTicketPoolId] = useState<string>("-1");
   const [lotteryPool, setLotteryPool] = useState<LotteryPool | null>(null);
   const lotteryId = useNetworkVariable("lotteryId");
-  const { data, isPending, error } = useSuiClientQuery("getObject", {
+  const { data, isPending } = useSuiClientQuery("getObject", {
     id: lotteryId,
     options: {
         showContent: true,
         showOwner: true,
     },
   });
-  const { data: lotteryData, isPending: isLotteryPending, error: lotteryError } = useSuiClientQuery("getObject", {
+  const { data: lotteryData, isPending: isLotteryPending} = useSuiClientQuery("getObject", {
     id: lotteryPoolId,
     options: {
       showContent: true,

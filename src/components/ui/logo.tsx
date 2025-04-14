@@ -1,12 +1,8 @@
 import React from 'react';
 import { Avatar } from "@radix-ui/themes";
 
-interface LogoProps {
-  size?: number;
-  className?: string;
-}
 
-const Logo: React.FC<LogoProps> = ({ size = 40, className = '' }) => {
+const Logo: React.FC = () => {
   return (
     <Avatar
     size="4"

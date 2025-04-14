@@ -13,7 +13,7 @@ import { Transaction } from "@mysten/sui/transactions";
 
 
 
-const ClaimRewards: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
+const ClaimRewards: React.FC = () => {
     const graphqlUrl = useNetworkVariable("graphqlUrl");
     const [isProcessing, setIsProcessing] = useState(false);
     const [winnerTickets, setwinnerTickets] = useState<Array<WinnerTicket>>([]);
