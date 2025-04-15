@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { LotteryPool } from '@/dto/LotteryPool';
 import { Button } from '@/components/ui/button';
 import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
-import { LotteryTicket } from '@/dto/LotteryTicket';
 import { Select } from "@radix-ui/themes";
 import { useToast } from '@/hooks/use-toast';
 import { Transaction } from "@mysten/sui/transactions";
@@ -22,9 +21,8 @@ const ClaimRewards: React.FC = () => {
     const account = useCurrentAccount();
     const { toast } = useToast();
 
-    const [isWinner, setIsWinner] = useState(false);
-    const [canClaim, setCanClaim] = useState(false);
-    const [userWinTicket, setUserWinTicket] = useState<LotteryTicket|null>(null);
+    const [claimStatus, setClaimStatus] = useState(0); //0没有中奖，1已中奖未领取，2已中奖已领取
+    const [userWinTicketId, setUserWinTicketId] = useState<String|null>(null);
     const [allLotteryPoolMap, setAllLotteryPoolMap] = useState<Map<string, LotteryPool>>(new Map());//
     const [tip, setTip] = useState("");
 
@@ -50,40 +48,39 @@ const ClaimRewards: React.FC = () => {
 
     useEffect(() => {
         if(account && selectedLotteryPoolId){
+          let lotteryPool = allLotteryPoolMap.get(selectedLotteryPoolId);
+            
+          if(lotteryPool){
+            setUserWinTicketId(lotteryPool?.winner_ticket_id);
+            getUsetTickets(account?.address as string, lotteryPool?.no.toString(), graphqlUrl).then(tickets => {
+              //setUserTickets(tickets);
+              tickets.forEach((item) => {
+                  //lotteryPool.status //1 进行中，2已开奖未领奖 3，已领奖
+                  if(lotteryPool?.status === 2 && item.id === userWinTicketId){
+                    setClaimStatus(1);
+                  }else if(lotteryPool?.status === 3 && item.id === userWinTicketId){
+                    setClaimStatus(2);
+                  }
+              })
+            });
+          }
             winnerTickets.forEach(selectedWinnerTicket => {
                 if(selectedWinnerTicket.lottery_pool_id === selectedLotteryPoolId){
                     setSelectedWinnerTicket(selectedWinnerTicket);
-                    getUsetTickets(account?.address as string, selectedWinnerTicket.lottery_pool_no, graphqlUrl).then(tickets => {
-                        //setUserTickets(tickets);
-                        tickets.forEach((item) => {
-                            if(item.id === selectedWinnerTicket.ticket_id){
-                                setIsWinner(true);
-                                setUserWinTicket(item);
-                            }
-                        })
-                    });
                 }
             });
-        }
-        if(selectedLotteryPoolId){
-            let lotteryPool = allLotteryPoolMap.get(selectedLotteryPoolId);
-            //1 进行中，2已开奖未领奖 3，已领奖
-            if(lotteryPool?.status === 2){
-                setCanClaim(true);
-            }
-        }
-        
+        }        
     }, [account, selectedLotteryPoolId]);
 
     useEffect(() => {
-        if(canClaim && isWinner){
-            setTip("Congratulations! Your lottery "+userWinTicket?.id+" ticket has won, you can claim now!");
-        }else if(isWinner && !canClaim){
+        if(claimStatus === 1){
+            setTip("Congratulations! Your lottery "+userWinTicketId+" ticket has won, you can claim now!");
+        }else if(claimStatus === 2){
             setTip("It seems that you have already claimed your prize.");
         }else {
             setTip("It seems that you haven't won a prize!")
         }
-    },[canClaim, isWinner])
+    },[claimStatus])
 
     const selectd = (lotteryPoolId: string) =>{
         setSelectedLotteryPoolId(lotteryPoolId);
@@ -223,7 +220,7 @@ const ClaimRewards: React.FC = () => {
                   {(
                     <Button
                       onClick={claimRewards}
-                      disabled={(!canClaim || !isWinner) && isProcessing}
+                      disabled={claimStatus != 1 || isProcessing}
                       className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 px-6 text-lg shadow-md"
                     >
                       {isProcessing ? 'Processing...' : 'Claim Rewards'}

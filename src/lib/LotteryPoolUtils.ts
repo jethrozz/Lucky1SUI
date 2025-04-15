@@ -110,6 +110,7 @@ export const getAllLotteryPool = async (graphqlUrl: string) : Promise<Map<string
     },
   });
   const allLotteryPool = queryResult.data?.objects?.edges?.map(edge => edge.node.asMoveObject?.contents?.json);
+  
   const result = new Map();
   getLotteryPools(allLotteryPool).forEach(item => {
     result.set(item.id, item);
