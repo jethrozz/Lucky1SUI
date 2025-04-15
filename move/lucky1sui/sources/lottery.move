@@ -303,6 +303,8 @@ module lucky1sui::lottery {
             lottery_vault::deposit<CoinType>(asset, &new_lottery_pool.account_cap, deposit_coin, storage, pool, incentive_v2, incentive_v3, clock);
 
             new_lottery_pool.no = no;
+            new_lottery_pool.joined_ticket_numbers = lottery_pool.joined_ticket_numbers;
+            new_lottery_pool.user_deposit = lottery_pool.user_deposit;
             // 获取 lottery_pool 的 ID
             let new_lottery_pool_id = object::id(&new_lottery_pool);
             lottery.lottery_pool_id = new_lottery_pool_id;
@@ -331,5 +333,25 @@ module lucky1sui::lottery {
         lottery_pool.status = 3;
         //获取奖励
         lottery_vault::claim_reward_entry<RewardCoinType>(clock, incentive, storage, reward_fund, &ctx.sender(), &lottery_pool.account_cap, ctx);
+    }
+
+    public entry fun stop_lottery<CoinType>(_: &LotteryAdminCap, lottery: &mut Lottery, lottery_pool: &mut LotteryPool,        storage: &mut Storage,
+        pool: &mut Pool<CoinType>,
+        incentive_v2: &mut IncentiveV2,
+        incentive_v3: &mut Incentive,
+        oracle: &PriceOracle,clock: &Clock, ctx: &mut TxContext){
+            let mut i = 0;
+            let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
+            let asset = *lottery_pool.asset_index.get(target_coin_type);
+            while(i < lottery_pool.user_deposit.size()){
+                let (address, value) = lottery_pool.user_deposit.get_entry_by_idx(i);
+                let deposit_coin = lottery_vault::withdraw<CoinType>(asset, &lottery_pool.account_cap, *value, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
+                // 将 coin 转移给 ctx.sender()
+                transfer::public_transfer(deposit_coin, *address);
+                i=i+1;
+            };
+            lottery_pool.status = 4;
+            let ox1_id = object::id_from_address(@0x1);
+            lottery.lottery_pool_id = ox1_id;
     }
 }
