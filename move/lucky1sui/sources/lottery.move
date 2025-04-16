@@ -1,6 +1,9 @@
 module lucky1sui::lottery {
     use sui::object::{Self, UID, ID};
     use sui::{clock::Clock, random::{Self, Random, RandomGenerator}, tx_context::{Self, TxContext}, transfer, vec_map::{Self, VecMap}, coin::{Self, Coin}};
+    use sui::table::{Self, Table};
+    use sui::linked_table::{Self, LinkedTable};
+
     use std::string::{Self, String};
     use lending_core::account::{AccountCap};
     use lending_core::lending;
@@ -27,12 +30,19 @@ module lucky1sui::lottery {
         no: u64, 
         create_time:u64,
         status: u8, //1 进行中 2 已结束待领奖 3 已领奖
-        user_deposit: VecMap<address, u64>, // 用户已存入的资金
-        joined_ticket_numbers: VecMap<String, ID>, //彩票号对应彩票nft
+        user_deposit: LinkedTable<address, u64> , // 用户已存入的资金
+        amount_deposit: u64, // 总存入金额
+        index_ticket_number: Table<u128, JoinTicketInfo> , //索引对应的彩票号
+        ticket_number_index: Table<String, u128>, //彩票号对应的索引
         winner_ticket_id: ID, //中奖彩票id
         account_cap: AccountCap,
         hold_on_time: u64,
         asset_index: VecMap<String, u8>,
+    }
+    public struct JoinTicketInfo has store, copy, drop {
+        ticket_number: String,
+        ticket_id: ID,
+        is_in_pool: bool,
     }
 
     public struct Lottery has key {
@@ -81,8 +91,13 @@ module lucky1sui::lottery {
         let ox1_id = object::id_from_address(@0x1);
         //如果彩票活动已经被开始了，则抛出1错误码
         assert!(lottery.lottery_pool_id == ox1_id, CAN_NOT_START_LOTTERY);
-        let lottery_pool = createLotteryPool(ctx, clock);
-        let user_count = lottery_pool.user_deposit.size();
+        let user_deposit = linked_table::new<address, u64>(ctx);
+
+        let index_ticket_number = table::new<u128, JoinTicketInfo>(ctx);
+        let ticket_number_index =  table::new<String, u128>(ctx); //彩票号对应的索引
+
+        let lottery_pool = createLotteryPool(0, user_deposit, index_ticket_number, ticket_number_index, ctx, clock);
+        let user_count = lottery_pool.user_deposit.length();
         let no = lottery_pool.no;
         // 获取 lottery_pool 的 ID
         let lottery_pool_id = object::id(&lottery_pool);
@@ -92,7 +107,7 @@ module lucky1sui::lottery {
         lottery_event::emit_lottery_start(lottery_pool_id, no, user_count);
     }
 
-    fun createLotteryPool(ctx: &mut TxContext, clock : &Clock): LotteryPool {
+    fun createLotteryPool(amount_deposit: u64, user_deposit: LinkedTable<address, u64>, index_ticket_number: Table<u128, JoinTicketInfo>, ticket_number_index: Table<String, u128>, ctx: &mut TxContext, clock : &Clock): LotteryPool {
         let mut asset_index = vec_map::empty();
         asset_index.insert(b"0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string(), 0);
 
@@ -102,9 +117,11 @@ module lucky1sui::lottery {
             no:1,
             status: 1,
             create_time: clock.timestamp_ms(),
-            user_deposit: vec_map::empty(), // 用户已存入的资金
+            user_deposit, // 用户已存入的资金
+            amount_deposit, // 总存入金额
             winner_ticket_id: object::id_from_address(@0x0),
-            joined_ticket_numbers: vec_map::empty(),
+            index_ticket_number,
+            ticket_number_index,
             account_cap: lending::create_account(ctx),
             asset_index,
             hold_on_time: 1*24*60*60*1000, //开奖时间。后续会用作校验
@@ -143,9 +160,19 @@ module lucky1sui::lottery {
         let ticket_number_set = lottery_ticket::getTicketNumberSet(&ticket);
         //将彩票号和彩票nftid关联起来
         let mut i=0;
+
+        let mut cur_length = lottery_pool.index_ticket_number.length() as u128;
+
         while(i < vector::length(ticket_number_set)){
             let ticket_no = vector::borrow(ticket_number_set, i);
-            lottery_pool.joined_ticket_numbers.insert(*ticket_no, ticket_id);
+            let joinTicketInfo = JoinTicketInfo{
+                ticket_number: *ticket_no,
+                ticket_id,
+                is_in_pool: true,
+            };
+            lottery_pool.index_ticket_number.add(cur_length, joinTicketInfo);
+            lottery_pool.ticket_number_index.add(*ticket_no, cur_length);
+            cur_length = cur_length + 1;
             i=i+1;
         };
         // 获取 account_cap 的引用
@@ -159,15 +186,15 @@ module lucky1sui::lottery {
         
         // 更新用户已存入的资金
         // 如果用户已经存在，则更新金额，否则插入   
-        if(lottery_pool.user_deposit.contains(&ctx.sender())){        
-            let old_value = lottery_pool.user_deposit.get(&ctx.sender());
+        if(lottery_pool.user_deposit.contains(ctx.sender())){        
+            let old_value = lottery_pool.user_deposit.borrow(ctx.sender());
             let total = *old_value + deposit_coin_value;
-
-            lottery_pool.user_deposit.remove(&ctx.sender());
-            lottery_pool.user_deposit.insert(ctx.sender(), total);
+            lottery_pool.user_deposit.remove(ctx.sender());
+            lottery_pool.user_deposit.push_back(ctx.sender(), total);
         }else{
-            lottery_pool.user_deposit.insert(ctx.sender(), deposit_coin_value);
+            lottery_pool.user_deposit.push_back(ctx.sender(), deposit_coin_value);
         };
+        lottery_pool.amount_deposit = lottery_pool.amount_deposit + deposit_coin_value;
 
         //发出事件
         let lotteryId = object::id(lottery_pool);
@@ -210,7 +237,7 @@ module lucky1sui::lottery {
         //退的金额
         let mut amount = ticket_nums.length() * 1_000_000_000;
         //拿到用户当前已存的金额
-        let ticket_amount = lottery_pool.user_deposit.get(&ctx.sender());
+        let ticket_amount = lottery_pool.user_deposit.borrow(ctx.sender());
         let mut left_amount = 0;
         //如果用户当前已存的金额小于退的金额，则退的金额为当前已存的金额
         if(*ticket_amount < amount){
@@ -219,6 +246,7 @@ module lucky1sui::lottery {
         }else{
             left_amount = *ticket_amount - amount;
         };
+        lottery_pool.amount_deposit = lottery_pool.amount_deposit - amount;
         //先将彩票号移除待抽奖池
         //从彩票中拿到彩票号
 
@@ -226,15 +254,19 @@ module lucky1sui::lottery {
         while(i < ticket_nums.length()){
             //将彩票号从彩票中移除
             let ticket_no = ticket_nums.borrow(i);
-            //将彩票号移除待抽奖池
-            lottery_pool.joined_ticket_numbers.remove(ticket_no);
+            if(lottery_pool.ticket_number_index.contains(*ticket_no)){
+                //先去池子拿到索引，
+                let index = lottery_pool.ticket_number_index.remove(*ticket_no);
+                //将彩票号移除待抽奖池
+                let _joinTicketInfo = lottery_pool.index_ticket_number.remove(index);
+            };
             i=i+1;
         };
 
         //更新用户已存入的资金
-        lottery_pool.user_deposit.remove(&ctx.sender());
+        lottery_pool.user_deposit.remove(ctx.sender());
         if(left_amount > 0){
-            lottery_pool.user_deposit.insert(ctx.sender(), left_amount);
+            lottery_pool.user_deposit.push_back(ctx.sender(), left_amount);
         };
 
         //退款操作
@@ -276,39 +308,56 @@ module lucky1sui::lottery {
 
             let mut generator: RandomGenerator = random::new_generator(rand, ctx);
                         //随机抽一个
-            let index = random::generate_u64_in_range(&mut generator, 0, lottery_pool.joined_ticket_numbers.size() - 1);
+            let index = random::generate_u64_in_range(&mut generator, 0, lottery_pool.ticket_number_index.length() - 1)  as u128;
             //拿到中奖彩票id和彩票号
-            let (ticket_no, ticket_id) = lottery_pool.joined_ticket_numbers.get_entry_by_idx(index);
-            lottery_pool.winner_ticket_id = *ticket_id;
+            let ticket_info = lottery_pool.index_ticket_number.borrow(index);
+            lottery_pool.winner_ticket_id = ticket_info.ticket_id;
             //发出事件
             let lotteryId = object::id(lottery_pool);
                         //赋值状态为已开奖待领奖
             lottery_pool.status = 2;
-            lottery_vault::get_reward_claimable_rewards<RewardCoinType>(clock, incentive_v3, storage, &lottery_pool.account_cap, lotteryId, lottery_pool.no, *ticket_id, *ticket_no, ctx);
+            lottery_vault::get_reward_claimable_rewards<RewardCoinType>(clock, incentive_v3, storage, &lottery_pool.account_cap, lotteryId, lottery_pool.no, ticket_info.ticket_id, ticket_info.ticket_number, ctx);
 
-            let mut amount = 0;
-            let mut i = 0;
-            while(i < lottery_pool.user_deposit.size()){
-                let (_, value) = lottery_pool.user_deposit.get_entry_by_idx(i);
-                amount = amount + *value;
-                i=i+1;
-            };
+            let amount = lottery_pool.amount_deposit;
             //拿到coin创建一个新的account_cap 用于下一期
             let asset = *lottery_pool.asset_index.get(target_coin_type);
             let deposit_coin = lottery_vault::withdraw<CoinType>(asset, &lottery_pool.account_cap, amount, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
 
             //自动开始新的一期
             let no = lottery_pool.no + 1;
-            let mut new_lottery_pool = createLotteryPool(ctx, clock);
-            lottery_vault::deposit<CoinType>(asset, &new_lottery_pool.account_cap, deposit_coin, storage, pool, incentive_v2, incentive_v3, clock);
+            let mut new_user_deposit = linked_table::new<address, u64>(ctx);
+            
+            let ( addr, value ) = lottery_pool.user_deposit.pop_front();
+            new_user_deposit.push_back(addr, value);
+            //将用户已存入的资金转移到新的用户已存入的资金
+            while(lottery_pool.user_deposit.length() > 0){
+                let ( addr, value) = lottery_pool.user_deposit.pop_front();
+                new_user_deposit.push_back(addr, value);
+            };
+            //销毁旧的用户已存入的资金
+            //lottery_pool.user_deposit.drop();
 
+            let mut new_index_ticket_number = table::new<u128, JoinTicketInfo>(ctx);
+            let mut new_ticket_number_index = table::new<String, u128>(ctx);
+            let mut new_index = 0 as u128;
+            let mut i = 0;
+            while(i < lottery_pool.index_ticket_number.length()){
+               let joined_ticket_info = lottery_pool.index_ticket_number.borrow(new_index);
+               if(joined_ticket_info.is_in_pool){
+                    new_index_ticket_number.add(new_index, *joined_ticket_info);
+                    new_ticket_number_index.add(joined_ticket_info.ticket_number, new_index);
+                    new_index = new_index + 1;
+               };
+               i = i + 1;
+            };
+            
+            let mut new_lottery_pool = createLotteryPool(amount,new_user_deposit, new_index_ticket_number, new_ticket_number_index,  ctx, clock);
+            lottery_vault::deposit<CoinType>(asset, &new_lottery_pool.account_cap, deposit_coin, storage, pool, incentive_v2, incentive_v3, clock);
             new_lottery_pool.no = no;
-            new_lottery_pool.joined_ticket_numbers = lottery_pool.joined_ticket_numbers;
-            new_lottery_pool.user_deposit = lottery_pool.user_deposit;
             // 获取 lottery_pool 的 ID
             let new_lottery_pool_id = object::id(&new_lottery_pool);
             lottery.lottery_pool_id = new_lottery_pool_id;
-            let user_count = new_lottery_pool.user_deposit.size();
+            let user_count = new_lottery_pool.user_deposit.length();
             transfer::share_object(new_lottery_pool);
             //发出事件
             lottery_event::emit_lottery_start(new_lottery_pool_id, no, user_count);
@@ -340,15 +389,18 @@ module lucky1sui::lottery {
         incentive_v2: &mut IncentiveV2,
         incentive_v3: &mut Incentive,
         oracle: &PriceOracle,clock: &Clock, ctx: &mut TxContext){
-            let mut i = 0;
             let target_coin_type = &type_name::into_string(type_name::get<CoinType>()).to_string();
             let asset = *lottery_pool.asset_index.get(target_coin_type);
-            while(i < lottery_pool.user_deposit.size()){
-                let (address, value) = lottery_pool.user_deposit.get_entry_by_idx(i);
-                let deposit_coin = lottery_vault::withdraw<CoinType>(asset, &lottery_pool.account_cap, *value, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
-                // 将 coin 转移给 ctx.sender()
-                transfer::public_transfer(deposit_coin, *address);
-                i=i+1;
+            
+            let ( addr, value ) = lottery_pool.user_deposit.pop_front();
+            let deposit_coin = lottery_vault::withdraw<CoinType>(asset, &lottery_pool.account_cap, value, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
+            transfer::public_transfer(deposit_coin, addr);
+
+            //将用户已存入的资金转移到新的用户已存入的资金
+            while(lottery_pool.user_deposit.length() > 0){
+                let ( addr, value) = lottery_pool.user_deposit.pop_front();
+                let deposit_coin = lottery_vault::withdraw<CoinType>(asset, &lottery_pool.account_cap, value, storage, pool, incentive_v2, incentive_v3, clock, oracle, ctx);
+                transfer::public_transfer(deposit_coin, addr);
             };
             lottery_pool.status = 4;
             let ox1_id = object::id_from_address(@0x1);
