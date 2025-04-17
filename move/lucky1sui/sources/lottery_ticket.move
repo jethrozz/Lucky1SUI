@@ -83,11 +83,27 @@ module lucky1sui::lottery_ticket{
     public(package) fun getTicket(ticket_pool: &mut TicketPool, lottery_pool_no: u64, random: &Random, ctx : &mut TxContext): Ticket{
         assert!(ticket_pool.is_live, E_NOT_LIVE);
         let tickets = &mut ticket_pool.tickets;
-        assert!(!tickets.is_empty(), E_EMPTY_POOL);
 
-        let mut ticket = if (tickets.length() == 1) {
+        let mut ticket = if (tickets.length() == 0) {
+            let mut name: String = b"".to_string();
+            name.append(ctx.sender().to_string());
+            name.append(b"-lucky1sui".to_string());
+            let ticket = Ticket {
+                id: object::new(ctx),
+                name: name,
+                description: name,
+                link: b"https://lucky1sui.waruls.site".to_string(),
+                image_url: b"https://img.picui.cn/free/2025/04/16/67ffc967ae238.png".to_string(),
+                project_url: b"https://lucky1sui.waruls.site".to_string(),
+                creator: b"LuckyOneSui".to_string(),
+                ticket_number_set: vector::empty<String>(),
+                pool_no: 0,
+                is_in_pool: false,
+        };
+            ticket
+        } else if( tickets.length() == 1){
             table_vec::pop_back(&mut ticket_pool.tickets)
-        } else {
+        }else {
             let mut generator = random::new_generator(random, ctx);
             let len = tickets.length();
             let i = random::generate_u64_in_range(&mut generator, 0, len-1);

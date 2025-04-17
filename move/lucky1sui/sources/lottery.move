@@ -105,7 +105,7 @@ module lucky1sui::lottery {
         assert!(lottery.lottery_pool_id == ox1_id, CAN_NOT_START_LOTTERY);
 
         let lottery_pool = createLotteryPool(lottery.round,0, ctx, clock);
-        let user_count = lottery_pool.user_deposit.length();
+        let user_count = lottery.user_deposit.length();
         let no = lottery_pool.no;
         // 获取 lottery_pool 的 ID
         let lottery_pool_id = object::id(&lottery_pool);
@@ -215,6 +215,7 @@ module lucky1sui::lottery {
 
     //退出抽奖
     public entry fun exitLotteryPool<CoinType>(
+        lottery: &mut Lottery,
         lottery_pool: &mut LotteryPool, 
         ticket: &mut Ticket,
         storage: &mut Storage,
@@ -316,9 +317,14 @@ module lucky1sui::lottery {
 
             let mut generator: RandomGenerator = random::new_generator(rand, ctx);
                         //随机抽一个
-            let index = random::generate_u64_in_range(&mut generator, 0, lottery_pool.ticket_number_index.length() - 1)  as u128;
+            let mut index = random::generate_u64_in_range(&mut generator, 0, lottery.ticket_number_index.length() - 1);
+            
+            while(!lottery.index_ticket_number.contains(index)){
+                index = random::generate_u64_in_range(&mut generator, 0, lottery.ticket_number_index.length() - 1);
+            };
+            
             //拿到中奖彩票id和彩票号
-            let ticket_info = lottery_pool.index_ticket_number.borrow(index);
+            let ticket_info = lottery.index_ticket_number.borrow(index);
             lottery_pool.winner_ticket_id = ticket_info.ticket_id;
             //发出事件
             let lotteryId = object::id(lottery_pool);
@@ -333,15 +339,15 @@ module lucky1sui::lottery {
 
             //自动开始新的一期
             lottery.round = lottery.round + 1;
-            let mut new_lottery_pool = createLotteryPool(lottery.roundamount, ctx, clock);
+            let mut new_lottery_pool = createLotteryPool(lottery.round,amount, ctx, clock);
             lottery_vault::deposit<CoinType>(asset, &new_lottery_pool.account_cap, deposit_coin, storage, pool, incentive_v2, incentive_v3, clock);
             // 获取 lottery_pool 的 ID
             let new_lottery_pool_id = object::id(&new_lottery_pool);
             lottery.lottery_pool_id = new_lottery_pool_id;
-            let user_count = new_lottery_pool.user_deposit.length();
+            let user_count = lottery.user_deposit.length();
             transfer::share_object(new_lottery_pool);
             //发出事件
-            lottery_event::emit_lottery_start(new_lottery_pool_id, no, user_count);
+            lottery_event::emit_lottery_start(new_lottery_pool_id, lottery.round, user_count);
         }
 
     public entry fun claim_reward<RewardCoinType>(
