@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import { LotteryPool } from '@/dto/LotteryPool';
+import { LotteryPool} from '@/dto/LotteryPool';
 
 const HeroSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
   return (

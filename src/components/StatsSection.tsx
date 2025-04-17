@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { LotteryPool } from '@/dto/LotteryPool';
+import { LotteryPool, Lottery } from '@/dto/LotteryPool';
 import { Button } from '@/components/ui/button';
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useNetworkVariable } from '@/networkConfig';
 import { toast } from '@/hooks/use-toast';
 import { Transaction } from '@mysten/sui/transactions';
-const StatsSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
+const StatsSection: React.FC<{lotteryPool: LotteryPool|null, lottery: Lottery|null}> = ({lotteryPool, lottery}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDrawing, setIsDrawing] = useState(false);
   const account = useCurrentAccount();
@@ -156,7 +156,7 @@ const StatsSection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) 
                   {isLoading ? (
                     <span className="animate-pulse">Loading...</span>
                   ) : (
-                    `${lotteryPool?.ticket_sets.size}`
+                    `${lottery?.active_user_count}`
                   )}
                 </h3>
                 <p className="text-primary text-sm bg-primary/10 inline-block px-1 py-0.3 rounded">+89 new today</p>

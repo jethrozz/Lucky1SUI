@@ -1,12 +1,18 @@
+export interface Lottery {
+  id: string;
+  round: number;
+  active_user_count: number,
+  ticket_number_count: number;
+  lottery_pool_id: string; //最新一期彩票池id  
+}
+
 export interface LotteryPool {
   id: string;
   no: number;
   create_time: number;
   status: number;
-  user_deposit: Map<string, number>,
   winner_ticket_id: string;
   hold_on_time: number;
-  ticket_sets: Set<string>;
   total_amount_pool: number;
   end_date: Date;
 }
@@ -22,11 +28,42 @@ export interface WinnerTicket {
   timestamp: string;
 }
 
+export function createLottery(data: any): Lottery | null {
+  if (!data) return null;
+  if (!data.fields) return null;
+  let lottery_json = data.fields;
+  let active_user_count = 0;
+  let ticket_number_count = 0;
+  if(lottery_json.user_deposit.size){
+    active_user_count = lottery_json.user_deposit.size;
+  }else {
+    active_user_count = lottery_json.user_deposit.fields.size;
+  }
+  if(lottery_json.ticket_number_index.size){
+    ticket_number_count = lottery_json.ticket_number_index.size;
+  }else {
+    ticket_number_count = lottery_json.ticket_number_index.fields.size;
+  }
+
+  let lottery: Lottery = {
+    id: lottery_json.id.id,
+    round: lottery_json.round,
+    active_user_count: active_user_count,
+    ticket_number_count: ticket_number_count,
+    lottery_pool_id: lottery_json.lottery_pool_id,
+  }
+  console.log("lottery", lottery);
+  return lottery;
+}
+
+
 export function createLotteryPool(data: any): LotteryPool | null {
   if (!data) return null;
   if (!data.fields) return null;
   let fields = data.fields;
   let lotteryPool = converToLotteryPool(fields);
+
+  console.log("lotteryPool", lotteryPool);
   return lotteryPool;
 }
 export function getWinnerTickets(data: any): Array<WinnerTicket> {
@@ -69,18 +106,18 @@ export function getLotteryPools(allLotteryPool: any): Array<LotteryPool> {
 
 
 function converToLotteryPool(item: any): LotteryPool {
+
   let lotteryPool: LotteryPool = {
     id: item.id,
     no: item.no,
     create_time: item.create_time,
     status: item.status,
-    user_deposit: new Map(),
     winner_ticket_id: item.winner_ticket_id,
     hold_on_time: 0,
-    ticket_sets: new Set(),
     total_amount_pool: 0,
     end_date: new Date(),
   }
+
   if(!( typeof item.id ==  "string")){
     lotteryPool.id = item.id.id;
   }
@@ -98,44 +135,8 @@ function converToLotteryPool(item: any): LotteryPool {
   let end = parseInt(lotteryPool?.hold_on_time.toString()) + parseInt(lotteryPool?.create_time.toString());
   lotteryPool.end_date = new Date(end);
 
-
-  let user_deposit = lotteryPool.user_deposit;
-  let total_amount_pool = 0;
-  let list = [];
-  if(item.user_deposit.fields){
-    list = item.user_deposit.fields.contents;
-  }else{
-    list = item.user_deposit.contents;
+  if(item.amount_deposit){
+    lotteryPool.total_amount_pool = item.amount_deposit / 1_000_000_000;
   }
-  for (let i = 0; i < list.length; i++) {
-    let fields = {key:"",value:"0"};
-    if(list[i].fields){
-      fields = list[i].fields;
-    }else {
-      fields = list[i];
-    }
-    let { key, value } = fields;
-    let value_number = (parseInt(value) as number)
-    user_deposit.set(key, value_number);
-    total_amount_pool += value_number;
-  }
-
-  let joined_ticket_array = [];
-  if(item.joined_ticket_numbers.contents){
-    joined_ticket_array = item.joined_ticket_numbers.contents
-  }else{
-    joined_ticket_array = item.joined_ticket_numbers.fields.contents
-
-  }
-  for (let i = 0; i < joined_ticket_array.length; i++) {
-    let value = null;
-    if(joined_ticket_array[i].fields){
-      value = joined_ticket_array[i].fields.value;
-    }else {
-      value = joined_ticket_array[i].value;
-    }
-    lotteryPool.ticket_sets.add(value)
-  }
-  lotteryPool.total_amount_pool = total_amount_pool / 1_000_000_000;
   return lotteryPool;
 }

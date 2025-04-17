@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Transaction } from "@mysten/sui/transactions";
 import { useCurrentAccount, useSignAndExecuteTransaction,  useSuiClient } from "@mysten/dapp-kit";
-import { LotteryPool } from '@/dto/LotteryPool';
+import { LotteryPool, Lottery } from '@/dto/LotteryPool';
 import { getUsetTickets } from '@/lib/LotteryPoolUtils';
 import { LotteryTicket } from '@/dto/LotteryTicket';
 import { useNetworkVariable } from '@/networkConfig';
@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Flex, Text } from "@radix-ui/themes";
 
-const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPoolId: string}> = ({lotteryPool, ticketPoolId} ) => {
+const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, lottery: Lottery|null, ticketPoolId: string}> = ({lotteryPool, lottery, ticketPoolId} ) => {
   const [entryAmount, setEntryAmount] = useState<number>(1);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -41,7 +41,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
   useEffect(() => {
     if (!lotteryPool) return;
     setIsLoading(false);
-    getUsetTickets(account?.address as string, lotteryPool.no.toString(), graphqlUrl).then(tickets => {
+    getUsetTickets(account?.address as string, graphqlUrl).then(tickets => {
       setUserTickets(tickets);
     });
   }, [lotteryPool, account]);
@@ -60,7 +60,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
   const canWithdraw = () => {
     if(!lotteryPool) return false;
     if(!account) return false;
-    return lotteryPool?.user_deposit.get(account?.address as string) !== undefined;
+    return userTickets.filter(item => item.is_in_pool).length > 0;
   }
   const calculateTickets = () => {
     return userTickets.filter(item => item.is_in_pool).length;
@@ -69,7 +69,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
   const calculateWinProbability = () => {
     if (!lotteryPool) return '0%';
     
-    const totalTicketNumbers = lotteryPool.total_amount_pool;
+    const totalTicketNumbers = lottery?.ticket_number_count || 0;
     let myTickets = 0;
     for(let i = 0; i < userTickets.length; i++){
       if(userTickets[i].is_in_pool){
@@ -94,6 +94,14 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       });
       return;
     }
+    if(!lottery){
+      toast({
+        title: "Lottery not found",
+        description: "Lottery not found",
+        variant: "destructive",
+      });
+      return;
+    }
     if(entryAmount >10 || entryAmount < 1){
       toast({
         title: "Invalid entry amount",
@@ -111,7 +119,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       });
       return;
     }
-    console.log("lotteryPool", lotteryPool);
+
     setIsPurchasing(true);
     const { address } = account;
     try{
@@ -137,7 +145,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
       
       tx.moveCall({
         target: `${packageId}::lottery::joinLotteryPool`,
-        arguments: [tx.object(lotteryPoolId), tx.object(ticketPoolId), suiCoin, tx.object(storageId), tx.object(incentiveV3Id), tx.object(incentiveV2Id), tx.object(poolSuiId), tx.object(clockId), tx.object(randomId)],
+        arguments: [tx.object(lottery.id),tx.object(lotteryPoolId), tx.object(ticketPoolId), suiCoin, tx.object(storageId), tx.object(incentiveV3Id), tx.object(incentiveV2Id), tx.object(poolSuiId), tx.object(clockId), tx.object(randomId)],
         typeArguments: [balance.coinType],
       });
       signAndExecuteTransaction(
@@ -185,6 +193,14 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
 
   const doWithdraw = (selectedTicket: string) => {
     if (!lotteryPool) return;
+    if(!lottery){
+      toast({
+        title: "Lottery not found",
+        description: "Lottery not found",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!account) {
       toast({
         title: "Please connect your wallet first",
@@ -211,7 +227,7 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
        */
       tx.moveCall({
         target: `${packageId}::lottery::exitLotteryPool`,
-        arguments: [tx.object(lotteryPoolId), 
+        arguments: [tx.object(lottery.id),tx.object(lotteryPoolId), 
           tx.object(selectedTicket), tx.object(storageId), tx.object(poolSuiId), tx.object(incentiveV2Id), tx.object(incentiveV3Id), tx.object(clockId), tx.object(oracleId)],
         typeArguments: [suiCoinType],
       });
@@ -272,18 +288,18 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, ticketPool
               <div className="flex justify-between items-center">
                 <span className="text-neutral-dark">Total Address:</span>
                 <span className="font-bold text-primary">
-                  {isLoading ? '...' : `${lotteryPool?.user_deposit.size}`}
+                  {isLoading ? '...' : `${lottery?.active_user_count || 0}`}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-dark">Total Tickets:</span>
+                <span className="text-neutral-dark">Total Ticket Numbers:</span>
                 <span className="font-bold text-primary">
-                  {isLoading ? '...' : `${lotteryPool?.ticket_sets.size}`}
+                  {isLoading ? '...' : `${lottery?.ticket_number_count || 0}`}
                 </span>
               </div>
               
               <div className="flex justify-between items-center">
-                <span className="text-neutral-dark">Your Tickets:</span>
+                <span className="text-neutral-dark">Your Ticket Numbers:</span>
                 <span className="font-bold text-primary">
                   {calculateTickets()}
                 </span>

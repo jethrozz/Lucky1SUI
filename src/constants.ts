@@ -1,6 +1,6 @@
-export const PACKAGE_ID = "0x783fe589142cbe0edab47994696e70c5ebc5d41a8cdcccaa7f31f1403402ebb3";
-export const LOTTERY_ID = "0xfb4f49e1ce5ff34154dc8600e0e822cb8bd8d644e6d5b9f903f4e6cf246c5981";
-export const TICKET_POOL_ID = "0xe0a21deaf87144f3bea8af68b00ceedb7610f0ff7bc2a9a02a714f2cb33a45c9";
+export const PACKAGE_ID = "0x44c474d58214a660f8bd203fe9c4b6574311f752ee0666b45bf479fea99ec424";
+export const LOTTERY_ID = "0xcddfa31b14230a5e34045c2ad79645f65a6036967e13e7ac22b11dd51bf7c11a";
+export const TICKET_POOL_ID = "0x3626fb2b21192dc2b3c50645cc9642c297f7d075950bc5c8b1de6559c18dcc3e";
 export const NFT_TYPE = PACKAGE_ID + "::lottery_ticket::Ticket";
 export const LOTTERY_POOL_TYPE = PACKAGE_ID + "::lottery::LotteryPool";
 export const TICKET_WIN_EVENT= PACKAGE_ID+"::lottery_event::WinTicket";

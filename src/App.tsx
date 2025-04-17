@@ -12,17 +12,17 @@ import CurrentLotterySection from "@/components/CurrentLotterySection";
 import ClaimRewards from "@/pages/claim-rewards";
 import { useNetworkVariable } from "@/networkConfig";
 import {useSuiClientQuery } from "@mysten/dapp-kit";
-import { LotteryPool ,createLotteryPool } from '@/dto/LotteryPool';
+import { LotteryPool ,createLotteryPool, Lottery, createLottery } from '@/dto/LotteryPool';
 
 
-function Router({ lotteryPool, ticketPoolId }: { lotteryPool: LotteryPool | null; ticketPoolId: string }) {
+function Router({ lotteryPool, lottery, ticketPoolId }: { lotteryPool: LotteryPool | null; lottery: Lottery | null; ticketPoolId: string }) {
   return (
     <Switch>
-      <Route path="/" component={() => (<Home lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />)} />
+      <Route path="/" component={() => (<Home lotteryPool={lotteryPool} lottery={lottery} ticketPoolId={ticketPoolId} />)} />
       <Route path="/how-it-works" component={() => (<HowItWorks lotteryPool={lotteryPool} />)}/>
       <Route path="/history" component={History}/>
       <Route path="/faq" component={() => (<FAQ lotteryPool={lotteryPool} />)} />
-      <Route path="/current-lottery" component={() => <CurrentLotterySection lotteryPool={lotteryPool} ticketPoolId={ticketPoolId} />} />
+      <Route path="/current-lottery" component={() => <CurrentLotterySection lotteryPool={lotteryPool} lottery={lottery} ticketPoolId={ticketPoolId} />} />
       <Route path="/claim-rewards" component={() => <ClaimRewards />} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
@@ -34,6 +34,7 @@ function App() {
   const [lotteryPoolId, setLotteryPoolId] = useState<string>("-1");
   const [ticketPoolId, setTicketPoolId] = useState<string>("-1");
   const [lotteryPool, setLotteryPool] = useState<LotteryPool | null>(null);
+  const [lottery, setLottery] = useState<Lottery | null>(null);
   const lotteryId = useNetworkVariable("lotteryId");
   const { data, isPending } = useSuiClientQuery("getObject", {
     id: lotteryId,
@@ -52,14 +53,17 @@ function App() {
 
   useEffect(() => {
     if (!isPending && data?.data?.content) {
-      setLotteryPoolId((data.data.content as any).fields.lottery_pool_id as string);
+      const lottery = createLottery(data.data.content as any);
+      if(lottery){
+        setLotteryPoolId(lottery.lottery_pool_id);
+        setLottery(lottery);
+      }
       setTicketPoolId((data.data.content as any).fields.ticket_pool_id as string);
     }
   }, [isPending, data]);
 
   useEffect(() => {
     if (!isLotteryPending && lotteryData) {
-      console.log(lotteryData);
       const lotteryPool = createLotteryPool(lotteryData.data?.content as any);
       setLotteryPool(lotteryPool);
     }
@@ -70,7 +74,7 @@ function App() {
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow">
-          <Router lotteryPool={lotteryPool} ticketPoolId={ticketPoolId}/>
+          <Router lotteryPool={lotteryPool} lottery={lottery} ticketPoolId={ticketPoolId}/>
         </main>
         <Footer />
         <Toaster />

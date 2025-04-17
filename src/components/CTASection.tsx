@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
-import { LotteryPool } from '@/dto/LotteryPool';
+import { LotteryPool, Lottery } from '@/dto/LotteryPool';
 
-const CTASection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
+const CTASection: React.FC<{lotteryPool: LotteryPool|null, lottery: Lottery|null}> = ({lotteryPool, lottery}) => {
 
   return (
     <section className="py-16 bg-gradient-to-br from-primary to-primary-light text-white">
@@ -18,7 +18,7 @@ const CTASection: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) =>
           <Button
             className="bg-primary hover:bg-primary-light text-white font-bold py-3 px-8"
           >
-            <Link href={`/current-lottery?lotteryPool=${lotteryPool}`}>
+            <Link href={`/current-lottery?lotteryPool=${lotteryPool}&lottery=${lottery}`}>
               Buy Tickets Now
             </Link>
           </Button>
