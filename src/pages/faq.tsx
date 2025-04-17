@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { LotteryPool } from '@/dto/LotteryPool';
+import { Lottery, LotteryPool } from '@/dto/LotteryPool';
 import {
   Accordion,
   AccordionContent,
@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import CTASection from '@/components/CTASection';
 
-const FAQ: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
+const FAQ: React.FC<{lotteryPool: LotteryPool|null, lottery: Lottery|null}> = ({lotteryPool, lottery}) => {
   return (
     <>
       <div className="bg-gradient-to-br from-primary to-primary-light text-white py-12">
@@ -194,7 +194,7 @@ const FAQ: React.FC<{lotteryPool: LotteryPool|null}> = ({lotteryPool}) => {
         </div>
       </div>
       
-      <CTASection lotteryPool={lotteryPool}/>
+      <CTASection lotteryPool={lotteryPool} lottery={lottery}/>
     </>
   );
 };

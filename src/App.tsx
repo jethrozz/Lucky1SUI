@@ -19,9 +19,9 @@ function Router({ lotteryPool, lottery, ticketPoolId }: { lotteryPool: LotteryPo
   return (
     <Switch>
       <Route path="/" component={() => (<Home lotteryPool={lotteryPool} lottery={lottery} ticketPoolId={ticketPoolId} />)} />
-      <Route path="/how-it-works" component={() => (<HowItWorks lotteryPool={lotteryPool} />)}/>
+      <Route path="/how-it-works" component={() => (<HowItWorks lotteryPool={lotteryPool} lottery={lottery} />)}/>
       <Route path="/history" component={History}/>
-      <Route path="/faq" component={() => (<FAQ lotteryPool={lotteryPool} />)} />
+      <Route path="/faq" component={() => (<FAQ lotteryPool={lotteryPool} lottery={lottery} />)} />
       <Route path="/current-lottery" component={() => <CurrentLotterySection lotteryPool={lotteryPool} lottery={lottery} ticketPoolId={ticketPoolId} />} />
       <Route path="/claim-rewards" component={() => <ClaimRewards />} />
       {/* Fallback to 404 */}

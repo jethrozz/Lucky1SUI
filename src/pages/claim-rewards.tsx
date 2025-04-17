@@ -53,7 +53,7 @@ const ClaimRewards: React.FC = () => {
           if(lotteryPool){
             let winTicketId = lotteryPool?.winner_ticket_id;
             setUserWinTicketId(lotteryPool?.winner_ticket_id);
-            getUsetTickets(account?.address as string, lotteryPool?.no.toString(), graphqlUrl).then(tickets => {
+            getUsetTickets(account?.address as string, graphqlUrl).then(tickets => {
               //setUserTickets(tickets);
               console.log(tickets)
               console.log(winTicketId)
