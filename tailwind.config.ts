@@ -65,7 +65,16 @@ export default {
         // 或者定义不同深浅度
         'my-color': {
           DEFAULT: '#0a1d2d',
-        }
+        },
+        'winner-gold': {
+          DEFAULT: '#FFD700',
+        },
+        'winner-silver': {
+          DEFAULT: '#B0B0B0',
+        },
+        'winner-bronze': {
+          DEFAULT: '#CD7F32',
+        },
       },
       keyframes: {
         "accordion-down": {

@@ -27,7 +27,7 @@ const PreviousWinnersSection: React.FC = () => {
 
   // Generate random background color based on wallet address
   const getColorClass = (address: string): string => {
-    const colors = ['bg-primary', 'bg-secondary', 'bg-accent'];
+    const colors = ['bg-winner-bronze', 'bg-winner-silver', 'bg-winner-gold'];
     const hash = address.split('').reduce((a, b) => {
       return a + b.charCodeAt(0);
     }, 0);
