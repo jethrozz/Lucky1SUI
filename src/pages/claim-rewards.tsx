@@ -49,22 +49,16 @@ const ClaimRewards: React.FC = () => {
     useEffect(() => {
         if(account && selectedLotteryPoolId){
           let lotteryPool = allLotteryPoolMap.get(selectedLotteryPoolId);
-          console.log(lotteryPool)
           if(lotteryPool){
             let winTicketId = lotteryPool?.winner_ticket_id;
             setUserWinTicketId(lotteryPool?.winner_ticket_id);
             getUsetTickets(account?.address as string, graphqlUrl).then(tickets => {
-              //setUserTickets(tickets);
-              console.log(tickets)
-              console.log(winTicketId)
               tickets.forEach((item) => {
                   //lotteryPool.status //1 进行中，2已开奖未领奖 3，已领奖
                   if(lotteryPool?.status === 2 && item.id === winTicketId){
-                    console.log(1)
                     setClaimStatus(1);
                   }else if(lotteryPool?.status === 3 && item.id === winTicketId){
                     setClaimStatus(2);
-                    console.log(2)
                   }
               })
             });
@@ -151,7 +145,6 @@ const ClaimRewards: React.FC = () => {
               {
                   onSuccess: (result) => {
                       // 成功时打印结果
-                      console.log("Claim rewards successful:", result);
                       // 设置交易摘要
                       toast({
                         title: "Claim rewards successful",

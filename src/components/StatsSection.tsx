@@ -56,7 +56,6 @@ const StatsSection: React.FC<{lotteryPool: LotteryPool|null, lottery: Lottery|nu
     return () => clearInterval(timer);
   }, [lotteryPool]);
   const handleDraw = () => {
-    console.log('draw');
     if(!lotteryPool) return;
     if (!account) {
       toast({

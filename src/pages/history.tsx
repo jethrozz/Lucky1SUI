@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { useNetworkVariable } from '@/networkConfig';
 import {getHistoryWinners} from '@/lib/LotteryPoolUtils';
 import {WinnerTicket} from '@/dto/LotteryPool';
+import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 const History: React.FC = () => {
@@ -11,6 +12,7 @@ const History: React.FC = () => {
   const [winnerTicket, setwinnerTicket] = useState<Array<WinnerTicket>>([]);
   const [isRewardDialogOpen, setRewardDialogOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState<WinnerTicket| null>(null);
+  const url = useNetworkVariable("url");
 
   useEffect(() => {
     getHistoryWinners(graphqlUrl).then(tickets => {
@@ -24,9 +26,33 @@ const History: React.FC = () => {
       return `${address.charAt(2).toUpperCase()}${address.charAt(3).toUpperCase()}`;
     };
 
-    const rewardsDetail = (winnerTicket:WinnerTicket) => {
-      console.log("rewardsDetail", winnerTicket);
-      setSelectedReward(winnerTicket);
+    const rewardsDetail = async (winnerTicket: WinnerTicket) => {
+      const suiClient = new SuiClient({ url });
+      
+      // 创建新的Map来存储带symbol的数据
+      const updatedRewards = new Map<string, number>();
+      
+      // 使用Promise.all等待所有异步操作
+      await Promise.all(
+        Array.from(winnerTicket.rewards_map.entries()).map(async ([coinType, amount]) => {
+          try {
+            const result = await suiClient.getCoinMetadata({
+              coinType: "0x" + coinType,
+            });
+            const symbol = result?.symbol || coinType;
+            updatedRewards.set(symbol, amount);
+          } catch (error) {
+            console.error("Error fetching coin metadata:", error);
+            updatedRewards.set(coinType, amount);
+          }
+        })
+      );
+  
+      // 创建新的对象触发状态更新
+      setSelectedReward({
+        ...winnerTicket,
+        rewards_map: updatedRewards
+      });
       setRewardDialogOpen(true);
     }
   // Generate random background color based on wallet address

@@ -52,7 +52,7 @@ export function createLottery(data: any): Lottery | null {
     ticket_number_count: ticket_number_count,
     lottery_pool_id: lottery_json.lottery_pool_id,
   }
-  console.log("lottery", lottery);
+  console.debug("lottery", lottery);
   return lottery;
 }
 
@@ -63,10 +63,11 @@ export function createLotteryPool(data: any): LotteryPool | null {
   let fields = data.fields;
   let lotteryPool = converToLotteryPool(fields);
 
-  console.log("lotteryPool", lotteryPool);
+  console.debug("lotteryPool", lotteryPool);
   return lotteryPool;
 }
 export function getWinnerTickets(data: any): Array<WinnerTicket> {
+  
   let digest_map: Map<string, WinnerTicket> = new Map();
   let result: Array<WinnerTicket> = new Array();
   //重新组合，因为一个digest可能有多种奖励
@@ -75,7 +76,7 @@ export function getWinnerTickets(data: any): Array<WinnerTicket> {
     let digest = transactionBlock.digest;
     if (digest_map.has(digest)) {
       let ticket: WinnerTicket | undefined = digest_map.get(digest);
-      ticket?.rewards_map.set(contents.json.coin_type, parseInt(contents.json.reward));
+      ticket?.rewards_map.set(contents.json.reward_coin_type, parseInt(contents.json.reward));
     } else {
       let ticket: WinnerTicket = {
         digest: transactionBlock.digest,
@@ -87,7 +88,7 @@ export function getWinnerTickets(data: any): Array<WinnerTicket> {
         ticket_id: contents.json.ticket_id,
         timestamp: timestamp,
       }
-      ticket.rewards_map.set(contents.json.coin_type, parseInt(contents.json.reward));
+      ticket.rewards_map.set(contents.json.reward_coin_type, parseInt(contents.json.reward));
       result.push(ticket);
     }
   }

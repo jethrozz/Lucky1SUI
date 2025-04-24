@@ -41,6 +41,7 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         graphqlUrl: GRAPHQL_URL_DEVNET,
         chain: "sui:devnet",
         rewardCoinType: REWARD_COIN_TYPE,
+        url: getFullnodeUrl("devnet"),
       },
     },
     testnet: {
@@ -62,6 +63,7 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         graphqlUrl: GRAPHQL_URL_TESTNET,
         chain: "sui:testnet",
         rewardCoinType: REWARD_COIN_TYPE,
+        url: getFullnodeUrl("testnet"),
       },
     },
     mainnet: {
@@ -83,6 +85,7 @@ const { networkConfig, useNetworkVariable, useNetworkVariables } =
         graphqlUrl: GRAPHQL_URL_MAINNET,
         chain: "sui:mainnet",
         rewardCoinType: REWARD_COIN_TYPE,
+        url: getFullnodeUrl("mainnet"),
       },
     },
   });

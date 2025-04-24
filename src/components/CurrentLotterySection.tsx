@@ -153,7 +153,6 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, lottery: L
         {
             onSuccess: (result) => {
                 // 成功时打印结果
-                console.log("Transaction successful:", result);
                 // 设置交易摘要
                 toast({
                   title: "Transaction successful",
@@ -210,7 +209,6 @@ const CurrentLotterySection: React.FC<{lotteryPool: LotteryPool|null, lottery: L
       return;
     }
     //创建交易
-    console.log(selectedTicket);
     try{
       const tx = new Transaction();
       let lotteryPoolId = lotteryPool.id;
