@@ -129,7 +129,7 @@ module lucky1sui::lottery {
             winner_ticket_id: object::id_from_address(@0x0),
             account_cap: lending::create_account(ctx),
             asset_index,
-            hold_on_time: 1*24*60*60*1000, //开奖时间。后续会用作校验
+            hold_on_time: 7*24*60*60*1000, //开奖时间。后续会用作校验
         };
         lottery_pool    
     }
